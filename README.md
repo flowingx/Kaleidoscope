@@ -49,7 +49,7 @@
 克隆本仓库到本地：
 ```bash
 git clone https://gitee.com/flowingr/kaleidoscope.git
-
+```
 进入项目目录，并安装依赖项：
 ```bash
 cd Kaleidoscope-master
