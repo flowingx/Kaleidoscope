@@ -1,0 +1,36 @@
+{
+  "defaults": {
+    "colours": {
+      "normal_bg": "#282c34",
+      "hovered_bg": "#3c4049",
+      "disabled_bg": "#252525",
+      "selected_bg": "#528bff",
+      "dark_bg": "#1c1f24",
+      "normal_text": "#abb2bf",
+      "hovered_text": "#ffffff",
+      "selected_text": "#ffffff",
+      "disabled_text": "#606060",
+      "link_text": "#61afef",
+      "link_hover": "#c678dd",
+      "link_selected": "#e06c75"
+    }
+  },
+  "UILabel": {
+    "misc": {
+      "text_horiz_alignment": "left"
+    }
+  },
+  "@centered_label": {
+    "misc": {
+      "text_horiz_alignment": "center"
+    }
+  },
+  "#dynamic_toggle_button": {
+    "colours": {
+      "normal_bg": "#e06c75",
+      "hovered_bg": "#c678dd",
+      "selected_bg": "#98c379",
+      "selected_hovered_bg": "#61afef"
+    }
+  }
+}
