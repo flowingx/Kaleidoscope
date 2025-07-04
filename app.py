@@ -1,9 +1,7 @@
 # app.py
 import pygame
-import sys
 import math
 import random
-import os
 import datetime
 import imageio
 import numpy as np
@@ -15,39 +13,30 @@ from layer import Layer
 from ui_handler import UIHandler
 import utils
 import drawing
+from export_manager import ExportManager
 
 class App:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        pygame.display.set_caption("Kaleidoscope - Robust Export")
+        pygame.display.set_caption("Kaleidoscope - Final Working Version")
         self.clock = pygame.time.Clock()
 
-        # State Variables
         self.is_running = True
         self.num_slices, self.symmetry_mode, self.brush_type, self.brush_size = 12, 'Kaleidoscope', 'Line', 5
         self.enable_rotation, self.enable_pulsing, self.global_rotation_angle, self.pulsing_scale = False, False, 0.0, 1.0
         self.start_color, self.end_color = (255, 0, 255), (0, 255, 255)
         self.active_color_selection = 'start'
 
-        # Layer Management
         self.layers = [Layer((config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT), name="Background")]
         self.active_layer_index = 0
         
-        # Drawing & Animation
         self.user_path, self.elements_to_animate, self.is_drawing, self.is_animating = [], [], False, False
         self.animation_index, self.animation_delay, self.last_animation_time = 0, 1, 0
         
-        # [SIMPLIFIED] Export State Machine Variables
-        self.export_state = "idle"  # "idle", "exporting_png", "rendering_gif", "saving_gif", "finished", "failed"
-        self.export_filename = ""
-        self.export_progress = 0
-        self.export_gif_frames = []
-        self.export_status_timer = 0
-        self.status_font = pygame.font.Font(None, 40)
+        self.export_manager = ExportManager()
         self.export_window = None
 
-        # UI Setup
         try:
             self.ui_manager = pygame_gui.UIManager((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), config.THEME_PATH)
         except (FileNotFoundError, pygame.error):
@@ -57,11 +46,12 @@ class App:
         self.ui_handler = UIHandler(self.ui_manager)
         self._initialize_ui_state()
 
-        # Color Spectrum Rects
         self.start_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 375, 95, 40)
         self.end_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 115, 375, 95, 40)
         self.spectrum_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 425, 200, 150)
         self.spectrum_surface = utils.create_color_spectrum(pygame.Rect(0,0,self.spectrum_rect.width, self.spectrum_rect.height))
+
+        self.status_font = pygame.font.Font(None, 40)
 
     def _initialize_ui_state(self):
         self.ui_handler.elements['slice_input'].set_text(str(self.num_slices))
@@ -70,19 +60,37 @@ class App:
         self._update_layer_list_ui()
 
     def _update_layer_list_ui(self):
-        self.ui_handler.elements['layer_list'].set_item_list([l.name for l in self.layers])
-        if self.layers:
-            self.ui_handler.elements['layer_list'].get_single_selection(self.layers[self.active_layer_index].name)
+        # [FINAL FIX] The robust 'kill and recreate' method, without any selection attempts.
+        if 'layer_list' in self.ui_handler.elements and self.ui_handler.elements['layer_list'] is not None:
+            old_list_rect = self.ui_handler.elements['layer_list'].relative_rect
+            container = self.ui_handler.elements['layer_list'].ui_container
+            self.ui_handler.elements['layer_list'].kill()
+        else:
+            old_list_rect = pygame.Rect(10, 30, 160, config.SCREEN_HEIGHT - 80)
+            # Find the container by its type if the list doesn't exist yet
+            for element in self.ui_manager.get_root_container().elements:
+                if isinstance(element, pygame_gui.elements.UIPanel) and element.relative_rect.left > config.DRAW_AREA_WIDTH:
+                    container = element
+                    break
+        
+        self.ui_handler.elements['layer_list'] = pygame_gui.elements.UISelectionList(
+            relative_rect=old_list_rect,
+            item_list=[l.name for l in self.layers],
+            manager=self.ui_manager,
+            container=container
+        )
     
     def run(self):
         while self.is_running:
-            time_delta = self.clock.tick(config.FPS) / 1000.0
+            time_delta_ms = self.clock.tick(config.FPS)
+            time_delta_seconds = time_delta_ms / 1000.0
+            
             self._handle_events()
-            self._update(time_delta)
+            self._update(time_delta_seconds, time_delta_ms)
             self._draw()
 
     def _handle_events(self):
-        is_input_blocked = self.export_state != "idle" or self.export_window is not None
+        is_input_blocked = self.export_manager.is_active() or self.export_window is not None
         for event in pygame.event.get():
             if event.type == pygame.QUIT: self.is_running = False
             if not is_input_blocked: self._handle_drawing_events(event)
@@ -126,8 +134,8 @@ class App:
             for i, layer in enumerate(self.layers):
                 if layer.name == event.text: self.active_layer_index = i; break
 
-    def _update(self, time_delta):
-        self.ui_manager.update(time_delta)
+    def _update(self, time_delta_seconds, time_delta_ms):
+        self.ui_manager.update(time_delta_seconds)
         if self.enable_rotation: self.global_rotation_angle += 0.001
         if self.enable_pulsing: self.pulsing_scale = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
         else: self.pulsing_scale = 1.0
@@ -141,8 +149,8 @@ class App:
                     self.animation_index += 1
                 else: self.is_animating = False
         
-        # [SIMPLIFIED] Update export process
-        self._update_export_process()
+        self.export_manager.update()
+        self.export_manager.update_timer(time_delta_ms)
 
     def _draw(self):
         self.screen.fill(config.BACKGROUND_COLOR)
@@ -202,74 +210,36 @@ class App:
         self.export_window.filename_input, self.export_window.format_dropdown = filename_input, format_dropdown
         
     def _action_start_export(self):
-        self.export_filename = self.export_window.filename_input.get_text()
+        filename = self.export_window.filename_input.get_text()
         file_format = self.export_window.format_dropdown.selected_option
-        if file_format == 'PNG (Image)': self.export_state = "exporting_png"
-        elif file_format == 'GIF (Animation)': self.export_state = "rendering_gif"; self.export_progress = 0; self.export_gif_frames.clear()
+        
+        if file_format == 'PNG (Image)':
+            image_to_save = drawing.get_composite_image(self.layers, apply_dynamics=True, angle=self.global_rotation_angle, scale=self.pulsing_scale)
+            self.export_manager.start_png_export(filename, image_to_save)
+        elif file_format == 'GIF (Animation)':
+            dynamics_params = {
+                'angle': self.global_rotation_angle,
+                'enable_rotation': self.enable_rotation,
+                'enable_pulsing': self.enable_pulsing
+            }
+            self.export_manager.start_gif_export(filename, self.layers, **dynamics_params)
+            
         self.export_window = None
 
-    def _update_export_process(self):
-        if self.export_state == "exporting_png":
-            try:
-                final_image = drawing.get_composite_image(self.layers, apply_dynamics=True, angle=self.global_rotation_angle, scale=self.pulsing_scale)
-                save_path = os.path.join(config.EXPORTS_DIR, f"{self.export_filename}.png")
-                pygame.image.save(final_image, save_path)
-                print(f"Image saved to {save_path}"); self.export_state = "finished"
-            except Exception as e:
-                print(f"[EXPORT ERROR] {e}"); self.export_state = "failed"
-            self.export_status_timer = 3000
-
-        elif self.export_state == "rendering_gif":
-            total_frames = 5 * 24
-            if self.export_progress < total_frames:
-                frame_surface = drawing.get_composite_image(
-                    self.layers, apply_dynamics=True, 
-                    custom_angle=self.global_rotation_angle + (0.01 * self.export_progress) if self.enable_rotation else self.global_rotation_angle,
-                    custom_scale=1.0 + 0.05 * math.sin(self.export_progress / 24 * math.pi) if self.enable_pulsing else 1.0)
-                frame_data = pygame.surfarray.array3d(frame_surface)
-                frame_data = np.transpose(frame_data, (1, 0, 2))
-                self.export_gif_frames.append(frame_data)
-                self.export_progress += 1
-            else:
-                self.export_state = "saving_gif"
-
-        elif self.export_state == "saving_gif":
-            try:
-                save_path = os.path.join(config.EXPORTS_DIR, f"{self.export_filename}.gif")
-                imageio.mimsave(save_path, self.export_gif_frames, fps=24, loop=0, **{"quantizer": "nq"})
-                print(f"Animation saved to {save_path}"); self.export_state = "finished"
-            except Exception as e:
-                print(f"[SAVE GIF ERROR] {e}"); self.export_state = "failed"
-            self.export_gif_frames.clear()
-            self.export_status_timer = 3000
-    
     def _draw_export_status(self):
-        if self.export_state == "idle":
-            if self.export_status_timer > 0:
-                self.export_status_timer -= self.clock.get_time()
+        message, progress = self.export_manager.get_status()
+        if not message:
             return
-        
-        message = ""
-        if self.export_state == "rendering_gif": message = f"Generating GIF... {int((self.export_progress / (5*24)) * 100)}%"
-        elif self.export_state == "saving_gif": message = "Saving GIF file..."
-        elif self.export_state == "finished": message = "Export Complete!"
-        elif self.export_state == "failed": message = "Export Failed! (Check Console)"
-        else: message = "Exporting..."
-        
-        if message:
-            text_surf = self.status_font.render(message, True, config.STATUS_TEXT_COLOR)
-            text_rect = text_surf.get_rect(center=(config.DRAW_AREA_WIDTH // 2, 40))
-            bg_rect = text_rect.inflate(20,20)
-            pygame.draw.rect(self.screen, (0,0,0,180), bg_rect, border_radius=5)
-            self.screen.blit(text_surf, text_rect)
-            if self.export_state == "rendering_gif":
-                bar_rect = pygame.Rect(0,0, bg_rect.width - 20, 10)
-                bar_rect.center = (bg_rect.centerx, bg_rect.bottom + 10)
-                pygame.draw.rect(self.screen, (80,80,80), bar_rect, border_radius=3)
-                progress_width = bar_rect.width * (self.export_progress / (5*24))
-                pygame.draw.rect(self.screen, (100,200,100), (bar_rect.left, bar_rect.top, progress_width, bar_rect.height), border_radius=3)
-        
-        if self.export_state in ["finished", "failed"]:
-            self.export_status_timer -= self.clock.get_time()
-            if self.export_status_timer <= 0:
-                self.export_state = "idle"
+            
+        text_surf = self.status_font.render(message, True, config.STATUS_TEXT_COLOR)
+        text_rect = text_surf.get_rect(center=(config.DRAW_AREA_WIDTH // 2, 40))
+        bg_rect = text_rect.inflate(20,20)
+        pygame.draw.rect(self.screen, (0,0,0,180), bg_rect, border_radius=5)
+        self.screen.blit(text_surf, text_rect)
+
+        if self.export_manager.state == "rendering_gif" or self.export_manager.state == "saving_gif":
+            bar_rect = pygame.Rect(0,0, bg_rect.width - 20, 10)
+            bar_rect.center = (bg_rect.centerx, bg_rect.bottom + 10)
+            pygame.draw.rect(self.screen, (80,80,80), bar_rect, border_radius=3)
+            progress_width = bar_rect.width * progress
+            pygame.draw.rect(self.screen, (100,200,100), (bar_rect.left, bar_rect.top, progress_width, bar_rect.height), border_radius=3)
