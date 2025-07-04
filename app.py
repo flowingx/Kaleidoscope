@@ -1,8 +1,12 @@
 # app.py
-import os
 import pygame
+import sys
 import math
+import random
+import os
 import datetime
+import imageio
+import numpy as np
 import pygame_gui
 
 # Import from our own modules
@@ -18,15 +22,6 @@ class App:
         pygame.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
         pygame.display.set_caption("Kaleidoscope")
-
-        try:
-            # Construct the path to the icon relative to the project root
-            icon_path = os.path.join(config.PROJECT_ROOT, 'icon.ico')
-            program_icon = pygame.image.load(icon_path)
-            pygame.display.set_icon(program_icon)
-        except pygame.error as e:
-            print(f"Warning: Could not load window icon. Error: {e}")
-
         self.clock = pygame.time.Clock()
 
         self.is_running = True
@@ -67,25 +62,25 @@ class App:
         self._update_layer_list_ui()
 
     def _update_layer_list_ui(self):
-        # [FINAL FIX] The robust 'kill and recreate' method, without any selection attempts.
         if 'layer_list' in self.ui_handler.elements and self.ui_handler.elements['layer_list'] is not None:
             old_list_rect = self.ui_handler.elements['layer_list'].relative_rect
             container = self.ui_handler.elements['layer_list'].ui_container
             self.ui_handler.elements['layer_list'].kill()
         else:
             old_list_rect = pygame.Rect(10, 30, 160, config.SCREEN_HEIGHT - 80)
-            # Find the container by its type if the list doesn't exist yet
             for element in self.ui_manager.get_root_container().elements:
                 if isinstance(element, pygame_gui.elements.UIPanel) and element.relative_rect.left > config.DRAW_AREA_WIDTH:
                     container = element
                     break
         
         self.ui_handler.elements['layer_list'] = pygame_gui.elements.UISelectionList(
-            relative_rect=old_list_rect,
-            item_list=[l.name for l in self.layers],
-            manager=self.ui_manager,
-            container=container
-        )
+            relative_rect=old_list_rect, item_list=[l.name for l in self.layers], manager=self.ui_manager, container=container)
+        if self.layers:
+            try:
+                self.ui_handler.elements['layer_list'].set_selection(self.layers[self.active_layer_index].name)
+            except AttributeError:
+                 # This handles older versions of pygame-gui by not setting a selection
+                 pass
     
     def run(self):
         while self.is_running:
@@ -177,6 +172,8 @@ class App:
 
     def _action_generate(self):
         if len(self.user_path) > 1:
+            # [FIXED] Stop any current drawing before generating
+            self.is_drawing = False
             new_layer = Layer((config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT)); self.layers.insert(0, new_layer); self.active_layer_index = 0
             self._update_layer_list_ui()
             self.is_animating = True; self.animation_index = 0; self.elements_to_animate.clear()
@@ -195,6 +192,13 @@ class App:
             self.user_path.clear()
 
     def _action_clear_all(self):
+        # resets everything
+        # 1. Stop any drawing or animation
+        self.is_drawing = False
+        self.is_animating = False
+        # 2. Clear the preview path
+        self.user_path.clear()
+        # 3. Reset layers
         if len(self.layers) > 1:
             self.layers = [self.layers[-1]]; self.active_layer_index = 0
             self._update_layer_list_ui()
