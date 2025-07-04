@@ -1,12 +1,3 @@
-好的，没问题。将一份好的中文文档翻译成地道、专业的英文文档，关键在于不仅仅是字面翻译，更是要符合英文技术文档的语境和习惯。
-
-下面是根据您提供的最终中文版 `README.md` 撰写的英文版 `README.md`。
-
----
-
-### **英文 README (`README.md` 或 `README.en.md`)**
-
-```markdown
 # Kaleidoscope
 
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
@@ -83,4 +74,3 @@ If you encounter any issues or have suggestions for new features, please let us 
 
 ## License
 This project is released under the [MIT License](LICENSE).
-```
