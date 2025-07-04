@@ -1,15 +1,16 @@
 # app.py
-import pygame, math, datetime,pygame_gui
+import pygame, math, datetime, pygame_gui
 import config, utils, drawing
 from layer import Layer
 from ui_handler import UIHandler
 from export_manager import ExportManager
+from history_manager import HistoryManager, AddLayerAction, DeleteLayerAction, ClearAllAction
 
 class App:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        pygame.display.set_caption("Kaleidoscope - Smart Buttons")
+        pygame.display.set_caption("Kaleidoscope - Global Undo/Redo")
         self.clock = pygame.time.Clock()
         self.is_running = True
         self.num_slices, self.symmetry_mode, self.brush_type = 12, 'Kaleidoscope', 'Line'
@@ -19,26 +20,28 @@ class App:
         self.active_color_selection = 'start'
         self.layers = [Layer((config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT), name="Background")]
         self.active_layer_index = 0
-        self.user_path, self.elements_to_animate, self.is_drawing, self.is_animating, self.skip_animation = [], [], False, False, False
+        self.user_path, self.elements_to_animate, self.is_drawing = [], [], False
+        self.is_animating, self.skip_animation = False, False
         self.animation_index, self.animation_delay, self.last_animation_time = 0, 1, 0
         self.export_manager = ExportManager()
         self.export_window = None
+        self.history_manager = HistoryManager(self)
         try:
             self.ui_manager = pygame_gui.UIManager((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), config.THEME_PATH)
         except (FileNotFoundError, pygame.error):
-            print("Warning: theme.json not found.")
-            self.ui_manager = pygame_gui.UIManager((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+            print("Warning: theme.json not found."); self.ui_manager = pygame_gui.UIManager((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
         self.ui_handler = UIHandler(self.ui_manager)
         self._initialize_ui_state()
-        self.start_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 375, 95, 40)
-        self.end_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 115, 375, 95, 40)
-        self.spectrum_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 425, 200, 150)
+        self.start_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 390, 95, 40)
+        self.end_color_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 115, 390, 95, 40)
+        self.spectrum_rect = pygame.Rect(config.DRAW_AREA_WIDTH + 10, 440, 200, 150)
         self.spectrum_surface = utils.create_color_spectrum(pygame.Rect(0,0,self.spectrum_rect.width, self.spectrum_rect.height))
-        self.brush_preview_pos = (config.DRAW_AREA_WIDTH + config.UI_PANEL_WIDTH - 45, 280)
+        self.brush_preview_pos = (config.DRAW_AREA_WIDTH + config.UI_PANEL_WIDTH - 45, 295)
         self.brush_preview_max_radius = 15
         self.status_font = pygame.font.Font(None, 40)
 
     def _initialize_ui_state(self):
+        # ... (same as before)
         self.ui_handler.elements['slice_input'].set_text(str(self.num_slices))
         self.ui_handler.elements['kaleido_btn'].select()
         initial_slider_value = 5
@@ -46,16 +49,19 @@ class App:
         self.brush_size = self._calculate_and_update_brush_size(initial_slider_value)
         self._update_layer_list_ui()
 
+
     def _calculate_and_update_brush_size(self, slider_value):
+        # ... (same as before)
         min_ui_val, max_ui_val = 1, 15; normalized_value = (slider_value - min_ui_val) / (max_ui_val - min_ui_val)
         exponent = 2.0; eased_value = math.pow(normalized_value, exponent)
         target_min_size, target_max_size = 1, 10
         final_brush_size = target_min_size + eased_value * (target_max_size - target_min_size)
-        value_text = f"{final_brush_size:.1f}"
-        self.ui_handler.elements['brush_size_value_label'].set_text(value_text)
+        value_text = f"{final_brush_size:.1f}"; self.ui_handler.elements['brush_size_value_label'].set_text(value_text)
         return final_brush_size
 
+
     def _update_layer_list_ui(self):
+        # ... (same as before)
         if 'layer_list' in self.ui_handler.elements and self.ui_handler.elements['layer_list'] is not None:
             old_list_rect = self.ui_handler.elements['layer_list'].relative_rect
             container = self.ui_handler.elements['layer_list'].ui_container; self.ui_handler.elements['layer_list'].kill()
@@ -79,6 +85,7 @@ class App:
             self._handle_events(); self._update(time_delta_seconds, time_delta_ms); self._draw()
 
     def _handle_events(self):
+        # ... (same as before)
         is_input_blocked = self.export_manager.is_active() or self.export_window is not None
         for event in pygame.event.get():
             if event.type == pygame.QUIT: self.is_running = False
@@ -86,7 +93,9 @@ class App:
             self._handle_gui_events(event)
             self.ui_manager.process_events(event)
 
+
     def _handle_drawing_events(self, event):
+        # ... (same as before)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if pygame.Rect(0, 0, config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT).collidepoint(event.pos):
                 self.is_drawing = True; self.user_path = [{'pos': event.pos, 'size': self.brush_size}]
@@ -101,11 +110,14 @@ class App:
                 self.user_path.append({'pos': event.pos, 'size': self.brush_size})
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1: self.is_drawing = False
 
+
     def _handle_gui_events(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             ui_element = event.ui_element
             if ui_element == self.ui_handler.elements['generate_btn']: self._action_generate()
             elif ui_element == self.ui_handler.elements['clear_all_btn']: self._action_clear_all()
+            elif ui_element == self.ui_handler.elements['undo_btn']: self.history_manager.undo()
+            elif ui_element == self.ui_handler.elements['redo_btn']: self.history_manager.redo()
             elif ui_element == self.ui_handler.elements['skip_animation_btn']: self.skip_animation = True
             elif ui_element == self.ui_handler.elements['delete_layer_btn']: self._action_delete_layer()
             elif ui_element == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'; ui_element.select(); self.ui_handler.elements['rotate_btn'].unselect()
@@ -131,15 +143,19 @@ class App:
         if self.enable_pulsing: self.pulsing_scale = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
         else: self.pulsing_scale = 1.0
         
-        generate_button = self.ui_handler.elements['generate_btn']
-        skip_button = self.ui_handler.elements['skip_animation_btn']
+        # UI Visibility Logic
         if self.is_animating:
-            if generate_button.visible: generate_button.hide()
-            if not skip_button.visible: skip_button.show()
+            self.ui_handler.elements['generate_btn'].hide(); self.ui_handler.elements['skip_animation_btn'].show()
         else:
-            if not generate_button.visible: generate_button.show()
-            if skip_button.visible: skip_button.hide()
+            self.ui_handler.elements['generate_btn'].show(); self.ui_handler.elements['skip_animation_btn'].hide()
+        
+        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
+        else: self.ui_handler.elements['undo_btn'].hide()
+        
+        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
+        else: self.ui_handler.elements['redo_btn'].hide()
 
+        # Animation Logic
         if self.is_animating:
             if self.skip_animation:
                 self._finish_current_animation(); self.skip_animation = False
@@ -157,6 +173,7 @@ class App:
         self.export_manager.update(); self.export_manager.update_timer(time_delta_ms)
 
     def _draw(self):
+        # ... (same as before)
         self.screen.fill(config.BACKGROUND_COLOR)
         composite_image = drawing.get_composite_image(self.layers, apply_dynamics=True, angle=self.global_rotation_angle, scale=self.pulsing_scale)
         self.screen.blit(composite_image, (0, 0))
@@ -180,15 +197,17 @@ class App:
         for element_to_draw in remaining_elements:
             element_to_draw['size'] = int(element_to_draw['size'])
             drawing.draw_on_surface(self.layers[0].surface, [element_to_draw], self.num_slices, self.symmetry_mode, 0, 1.0)
-        self.is_animating, self.animation_index = False, 0
+        self.is_animating = False; self.animation_index = 0
         self.elements_to_animate.clear()
 
     def _action_generate(self):
         if self.is_animating: self._finish_current_animation()
         if len(self.user_path) > 1:
             self.is_drawing = False
-            new_layer = Layer((config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT)); self.layers.insert(0, new_layer); self.active_layer_index = 0
-            self._update_layer_list_ui()
+            new_layer = Layer((config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT))
+            action = AddLayerAction(self, new_layer)
+            self.history_manager.execute_action(action)
+            
             self.is_animating = True; self.animation_index = 0; self.elements_to_animate.clear()
             total_dist = sum(pygame.Vector2(self.user_path[i+1]['pos']).distance_to(self.user_path[i]['pos']) for i in range(len(self.user_path)-1))
             current_dist = 0
@@ -208,15 +227,19 @@ class App:
         if self.is_animating: self._finish_current_animation()
         self.is_drawing = False; self.user_path.clear()
         if len(self.layers) > 1:
-            self.layers = [self.layers[-1]]; self.active_layer_index = 0
-            self._update_layer_list_ui()
+            cleared = self.layers[:-1]
+            action = ClearAllAction(self, cleared)
+            self.history_manager.execute_action(action)
     
     def _action_delete_layer(self):
         if len(self.layers) > 1 and self.layers[self.active_layer_index].name != "Background":
-            self.layers.pop(self.active_layer_index); self.active_layer_index = min(self.active_layer_index, len(self.layers) - 1)
-            self._update_layer_list_ui()
+            layer_to_delete = self.layers[self.active_layer_index]
+            index = self.active_layer_index
+            action = DeleteLayerAction(self, layer_to_delete, index)
+            self.history_manager.execute_action(action)
             
     def _action_open_export_dialog(self):
+        # ... (same as before)
         self.export_window = pygame_gui.windows.UIConfirmationDialog(
             rect=pygame.Rect((0, 0), (400, 220)), manager=self.ui_manager, window_title="Export Options", 
             action_long_desc="", action_short_name="Export", blocking=True)
@@ -229,6 +252,7 @@ class App:
         self.export_window.filename_input, self.export_window.format_dropdown = filename_input, format_dropdown
         
     def _action_start_export(self):
+        # ... (same as before)
         filename = self.export_window.filename_input.get_text()
         file_format = self.export_window.format_dropdown.selected_option
         if file_format == 'PNG (Image)':
@@ -240,6 +264,7 @@ class App:
         self.export_window = None
 
     def _draw_export_status(self):
+        # ... (same as before)
         message, progress = self.export_manager.get_status()
         if not message: return
         text_surf = self.status_font.render(message, True, config.STATUS_TEXT_COLOR)
