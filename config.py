@@ -1,9 +1,20 @@
 # config.py
 import os
+import sys
+import pygame
 
-# --- [CRITICAL FIX] Define an absolute project root ---
-# This ensures all file paths are relative to the project folder, not the current working directory.
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+# --- [CRITICAL FIX FOR PACKAGED APP] ---
+# This function reliably gets the base path, whether running from script or from a PyInstaller executable.
+def get_base_path():
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # sets the sys._MEIPASS attribute to the path of the BUNDLE folder.
+    if hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    # Otherwise, we are running in a normal Python environment.
+    return os.path.abspath(os.path.dirname(__file__))
+
+# Define an absolute project root using our reliable function.
+PROJECT_ROOT = get_base_path()
 
 # --- Screen & Layout ---
 SCREEN_WIDTH = 1200
@@ -18,7 +29,18 @@ FPS = 60
 
 # --- File Paths (now based on the absolute project root) ---
 THEME_PATH = os.path.join(PROJECT_ROOT, 'theme.json')
-EXPORTS_DIR = os.path.join(PROJECT_ROOT, 'exports')
+
+# [CRITICAL FIX] The exports directory should be relative to the executable, not the temp folder.
+# To do this, we get the directory of the executable itself.
+if getattr(sys, 'frozen', False):
+    # If we are running in a PyInstaller bundle
+    application_path = os.path.dirname(sys.executable)
+else:
+    # If we are running in a normal Python environment
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+EXPORTS_DIR = os.path.join(application_path, 'exports')
+
 
 # --- Colors ---
 WHITE = (255, 255, 255)
