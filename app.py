@@ -1,10 +1,8 @@
 # app.py
+import os
 import pygame
 import math
-import random
 import datetime
-import imageio
-import numpy as np
 import pygame_gui
 
 # Import from our own modules
@@ -19,7 +17,16 @@ class App:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        pygame.display.set_caption("Kaleidoscope - Final Working Version")
+        pygame.display.set_caption("Kaleidoscope")
+
+        try:
+            # Construct the path to the icon relative to the project root
+            icon_path = os.path.join(config.PROJECT_ROOT, 'icon.ico')
+            program_icon = pygame.image.load(icon_path)
+            pygame.display.set_icon(program_icon)
+        except pygame.error as e:
+            print(f"Warning: Could not load window icon. Error: {e}")
+
         self.clock = pygame.time.Clock()
 
         self.is_running = True
