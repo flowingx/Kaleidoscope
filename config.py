@@ -26,6 +26,7 @@ CENTER_X, CENTER_Y = DRAW_AREA_WIDTH // 2, SCREEN_HEIGHT // 2
 
 # --- Performance ---
 FPS = 60
+GUIDE_LINE_COLOR = (80, 80, 80) # 为引导线设置一个不刺眼的灰色
 
 # --- File Paths (now based on the absolute project root) ---
 THEME_PATH = os.path.join(PROJECT_ROOT, 'theme.json')
