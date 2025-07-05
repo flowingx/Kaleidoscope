@@ -144,7 +144,16 @@ class App:
             elif ui_element == self.ui_handler.elements['rotate_toggle']: self.enable_rotation = not self.enable_rotation; ui_element.select() if self.enable_rotation else ui_element.unselect()
             elif ui_element == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing; ui_element.select() if self.enable_pulsing else ui_element.unselect()
             elif ui_element == self.ui_handler.elements['export_btn'] and self.export_window is None: self._action_open_export_dialog()
-        if event.type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED and event.ui_element == self.export_window: self._action_start_export()
+        
+        if event.type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
+            if self.export_window and event.ui_element == self.export_window:
+                self._action_start_export()
+
+        if event.type == pygame_gui.UI_WINDOW_CLOSE:
+            if self.export_window and event.ui_element == self.export_window:
+                self.export_manager.cancel_export()
+                self.export_window = None
+
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
             if event.ui_element == self.ui_handler.elements['brush_dropdown']: 
                 self.brush_type = event.text

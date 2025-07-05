@@ -33,6 +33,13 @@ class ExportManager:
             self.state = "failed"
         self.status_timer = 3000
 
+    def cancel_export(self):
+        """当用户取消导出时调用此方法"""
+        if self.state != 'idle':
+            print("Export cancelled by user.")
+            self.state = 'idle'
+            self.status_timer = 0 # 立即清除任何状态消息
+
     def start_gif_export(self, filename, layers, **dynamics_params):
         if self.state != 'idle':
             print("Cannot start new export while another is in progress.")
