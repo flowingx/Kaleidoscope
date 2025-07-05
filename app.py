@@ -10,7 +10,7 @@ class App:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        pygame.display.set_caption("Kaleidoscope - Refactored")
+        pygame.display.set_caption("Kaleidoscope")
         self.clock = pygame.time.Clock()
         self.is_running = True
 
