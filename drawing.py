@@ -1,8 +1,8 @@
 # drawing.py
-from config import CENTER_X, CENTER_Y, GUIDE_LINE_COLOR, DRAW_AREA_WIDTH
-import random
 import pygame
 import math
+import random
+from config import CENTER_X, CENTER_Y, DRAW_AREA_WIDTH, GUIDE_LINE_COLOR
 
 def draw_dashed_line(surface, color, start_pos, end_pos, dash_length=10, gap_length=5):
     """在两点之间绘制一条虚线。"""
@@ -10,6 +10,7 @@ def draw_dashed_line(surface, color, start_pos, end_pos, dash_length=10, gap_len
     end_vec = pygame.Vector2(end_pos)
     direction = (end_vec - start_vec)
     distance = direction.length()
+    if distance == 0: return
     direction.normalize_ip()
     
     current_pos = start_vec
@@ -54,24 +55,21 @@ def draw_on_surface(surface, elements, num_slices, symmetry_mode, global_rotatio
         color = element['color']
         brush_type = element['type']
 
-        # Center the drawing coordinates
+        # 将坐标原点移至画布中心
         pos.x -= CENTER_X
         pos.y -= CENTER_Y
         
-        # Apply pulsing scale
+        # 应用脉冲缩放
         pos *= pulsing_scale
 
         for i in range(num_slices):
             rotated_pos = pos.rotate(i * slice_angle)
             
-            # For kaleidoscope mode, reflect every other slice
+            # 万花筒模式下，对奇数切片进行镜像反射
             if symmetry_mode == 'Kaleidoscope' and i % 2 == 1:
-                rotated_pos = pos.rotate(i * slice_angle)
-                rotated_pos.y = -rotated_pos.y # Reflect across the slice's central axis
-            else:
-                rotated_pos = pos.rotate(i * slice_angle)
-
-            # Convert back to screen coordinates
+                rotated_pos.y = -rotated_pos.y
+            
+            # 将坐标转换回屏幕坐标
             draw_pos = (int(rotated_pos.x + CENTER_X), int(rotated_pos.y + CENTER_Y))
 
             if brush_type == 'Circle':
@@ -83,22 +81,33 @@ def draw_on_surface(surface, elements, num_slices, symmetry_mode, global_rotatio
                     if offset_x**2 + offset_y**2 < size**2:
                         pygame.draw.circle(surface, color, (draw_pos[0] + offset_x, draw_pos[1] + offset_y), 1)
 
-def get_composite_image(layers, apply_dynamics=False, angle=0, scale=1.0, dynamics_params=None):
-    from config import DRAW_AREA_WIDTH, SCREEN_HEIGHT, CENTER_X, CENTER_Y
-    composite = pygame.Surface((DRAW_AREA_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    
-    if dynamics_params is None:
-        dynamics_params = {'angle': angle, 'scale': scale}
-    
-    current_angle = dynamics_params.get('angle', 0)
-    current_scale = dynamics_params.get('scale', 1.0)
+def get_composite_image(layers, apply_dynamics=False, angle=0, scale=1.0):
+    """
+    合成所有图层，并应用全局动态效果（旋转和缩放）。
+    """
+    if not layers:
+        return pygame.Surface((DRAW_AREA_WIDTH, 800), pygame.SRCALPHA)
 
-    for layer in reversed(layers):
-        if layer.is_visible:
-            if apply_dynamics:
-                transformed_layer = pygame.transform.rotozoom(layer.surface, math.degrees(-current_angle), current_scale)
-                rect = transformed_layer.get_rect(center=(CENTER_X, CENTER_Y))
-                composite.blit(transformed_layer, rect)
-            else:
-                composite.blit(layer.surface, (0,0))
-    return composite
+    base_surface = layers[0].surface.copy()
+    for layer in layers[1:]:
+        base_surface.blit(layer.surface, (0, 0))
+
+    if not apply_dynamics:
+        return base_surface
+
+    # 应用全局旋转和缩放
+    final_surface = base_surface
+    if scale != 1.0:
+        original_size = final_surface.get_size()
+        scaled_size = (int(original_size[0] * scale), int(original_size[1] * scale))
+        final_surface = pygame.transform.scale(final_surface, scaled_size)
+    
+    if angle != 0:
+        final_surface = pygame.transform.rotate(final_surface, -angle) # Pygame的旋转是逆时针的
+
+    # 创建一个正确尺寸的画布，将旋转/缩放后的图像居中放置
+    final_canvas = pygame.Surface((DRAW_AREA_WIDTH, 800), pygame.SRCALPHA)
+    final_rect = final_surface.get_rect(center=(CENTER_X, 400))
+    final_canvas.blit(final_surface, final_rect)
+    
+    return final_canvas

@@ -173,7 +173,7 @@ class App:
 
     def _update(self, time_delta_seconds, time_delta_ms):
         self.ui_manager.update(time_delta_seconds)
-        if self.enable_rotation: self.global_rotation_angle += 1 * time_delta_seconds
+        if self.enable_rotation: self.global_rotation_angle += 2 * time_delta_seconds
         if self.enable_pulsing: self.pulsing_scale = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
         else: self.pulsing_scale = 1.0
         
