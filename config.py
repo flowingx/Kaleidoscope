@@ -1,10 +1,7 @@
 # config.py
 import os
 import sys
-import pygame
 
-# --- [CRITICAL FIX FOR PACKAGED APP] ---
-# This function reliably gets the base path, whether running from script or from a PyInstaller executable.
 def get_base_path():
     # If the application is run as a bundle, the PyInstaller bootloader
     # sets the sys._MEIPASS attribute to the path of the BUNDLE folder.
@@ -26,13 +23,11 @@ CENTER_X, CENTER_Y = DRAW_AREA_WIDTH // 2, SCREEN_HEIGHT // 2
 
 # --- Performance ---
 FPS = 60
-GUIDE_LINE_COLOR = (80, 80, 80) # 为引导线设置一个不刺眼的灰色
+GUIDE_LINE_COLOR = (80, 80, 80)
 
-# --- File Paths (now based on the absolute project root) ---
+# --- File Paths ---
 THEME_PATH = os.path.join(PROJECT_ROOT, 'theme.json')
 
-# [CRITICAL FIX] The exports directory should be relative to the executable, not the temp folder.
-# To do this, we get the directory of the executable itself.
 if getattr(sys, 'frozen', False):
     # If we are running in a PyInstaller bundle
     application_path = os.path.dirname(sys.executable)
@@ -41,7 +36,6 @@ else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
 EXPORTS_DIR = os.path.join(application_path, 'exports')
-
 
 # --- Colors ---
 WHITE = (255, 255, 255)

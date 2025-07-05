@@ -53,17 +53,15 @@ class UIHandler:
         y_pos += 20 + section_padding
         self._create_divider(y_pos - (section_padding / 2), control_panel)
 
-        # --- Section 3: 辅助功能 (修改为滑块) ---
+        # --- Section 3: 辅助功能 ---
         self.elements['aids_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((10, y_pos, UI_PANEL_WIDTH - 40, label_height)), text="Aids", manager=self.manager, container=control_panel)
         y_pos += label_height
         
-        # 添加一个标签来显示当前档位
         self.elements['guides_value_label'] = pygame_gui.elements.UILabel(
             relative_rect=pygame.Rect((10, y_pos, 95, element_height)),
             text="Guides: Off",
             manager=self.manager, container=control_panel)
         
-        # 添加滑块，设置4个档位 (0, 1, 2, 3)
         self.elements['guides_slider'] = pygame_gui.elements.UIHorizontalSlider(
             relative_rect=pygame.Rect((115, y_pos + 5, 95, 20)),
             start_value=0,

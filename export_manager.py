@@ -24,7 +24,6 @@ class ExportManager:
     def start_png_export(self, filename, image_surface):
         self.state = "exporting_png"
         try:
-            # [CRITICAL FIX] Use the absolute path for saving
             save_path = os.path.join(config.EXPORTS_DIR, f"{filename}.png")
             pygame.image.save(image_surface, save_path)
             print(f"Image saved to {save_path}")
@@ -84,7 +83,6 @@ class ExportManager:
 
     def _save_gif_file(self):
         try:
-            # [CRITICAL FIX] Use the absolute path for saving
             save_path = os.path.join(config.EXPORTS_DIR, f"{self.filename}.gif")
             imageio.mimsave(save_path, self.gif_frames, fps=self.fps, loop=0, **{"quantizer": "nq"})
             print(f"Animation saved to {save_path}")

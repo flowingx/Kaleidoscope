@@ -44,7 +44,6 @@ def draw_guide_lines(surface, num_slices):
 def draw_on_surface(surface, elements, num_slices, symmetry_mode, global_rotation_angle, pulsing_scale):
     """
     Draws a list of elements onto a surface with specified symmetry.
-    [FIX] The global_rotation_angle is now correctly NOT used for individual slice drawing,
     as it's applied globally later in get_composite_image.
     """
     slice_angle = 360 / num_slices

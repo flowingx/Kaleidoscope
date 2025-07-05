@@ -17,7 +17,7 @@ class App:
         # --- State Variables ---
         self.num_slices, self.symmetry_mode, self.brush_type = 12, 'Kaleidoscope', 'Line'
         self.brush_size = 1.0
-        self.guide_line_slices = 0 # 新增：引导线切片数，0为关闭
+        self.guide_line_slices = 0
         self.enable_rotation, self.enable_pulsing, self.global_rotation_angle, self.pulsing_scale = False, False, 0.0, 1.0
         self.start_color, self.end_color = (255, 0, 255), (0, 255, 255)
         self.active_color_selection = 'start'
@@ -208,7 +208,6 @@ class App:
         
         composite_image = drawing.get_composite_image(self.layers, apply_dynamics=True, angle=self.global_rotation_angle, scale=self.pulsing_scale)
         
-        # 新增：在合成图像上绘制引导线
         if self.guide_line_slices > 0:
             drawing.draw_guide_lines(composite_image, self.guide_line_slices)
 
