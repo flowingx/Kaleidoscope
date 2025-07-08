@@ -53,7 +53,8 @@ class UIHandler:
         y += btn_h + sp
         self._create_divider(y - sp/2, control_panel)
 
-        panel_height = 135
+        panel_height = 160
+
         # --- 像素笔刷设置面板 ---
         self.elements['brush_panel'] = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect(5, y, UI_PANEL_WIDTH-25, panel_height), manager=self.manager, container=control_panel, starting_layer_height=1)
         b_y = 5
@@ -64,7 +65,33 @@ class UIHandler:
         b_y += lh
         self.elements['brush_size_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(5, b_y, UI_PANEL_WIDTH-80, 20), start_value=5, value_range=(1, 15), manager=self.manager, container=self.elements['brush_panel'])
         self.elements['brush_preview_pos'] = (DRAW_AREA_WIDTH + UI_PANEL_WIDTH - 45, y + b_y)
-        
+
+        b_y += 20 + sp # 为下面的选项面板留出空间
+
+        # [NEW] 创建共享空间的容器面板
+        options_panel_rect = pygame.Rect(0, b_y, UI_PANEL_WIDTH-25, 80)
+
+        # --- Circle 笔刷选项容器 ---
+        self.elements['circle_options_panel'] = pygame_gui.elements.UIPanel(relative_rect=options_panel_rect, manager=self.manager, container=self.elements['brush_panel'], starting_layer_height=2)
+        co_y = 5 # Circle Options Y
+        self.elements['brush_spacing_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, co_y, 70, lh), text="Spacing:", manager=self.manager, container=self.elements['circle_options_panel'])
+        self.elements['brush_spacing_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(80, co_y+2, UI_PANEL_WIDTH-125, 20), start_value=100, value_range=(1, 300), manager=self.manager, container=self.elements['circle_options_panel'])
+        co_y += lh + p
+        self.elements['brush_color_jitter_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, co_y, 70, lh), text="Jitter:", manager=self.manager, container=self.elements['circle_options_panel'])
+        self.elements['brush_color_jitter_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(80, co_y+2, UI_PANEL_WIDTH-125, 20), start_value=0, value_range=(0, 100), manager=self.manager, container=self.elements['circle_options_panel'])
+
+        # --- Spray 笔刷选项容器 ---
+        self.elements['spray_options_panel'] = pygame_gui.elements.UIPanel(relative_rect=options_panel_rect, manager=self.manager, container=self.elements['brush_panel'], starting_layer_height=2)
+        so_y = 5 # Spray Options Y
+        label_width = 100  # [FIX] 增加标签宽度
+        slider_x_pos = label_width + 5 # [FIX] 调整滑块的起始 X 坐标
+
+        self.elements['brush_flow_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, so_y, label_width, lh), text="Flow:", manager=self.manager, container=self.elements['spray_options_panel'])
+        self.elements['brush_flow_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(slider_x_pos, so_y+2, UI_PANEL_WIDTH-slider_x_pos-30, 20), start_value=30, value_range=(5, 100), manager=self.manager, container=self.elements['spray_options_panel'])
+        so_y += lh + p
+        self.elements['brush_size_jitter_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, so_y, label_width, lh), text="Size Jitter:", manager=self.manager, container=self.elements['spray_options_panel'])
+        self.elements['brush_size_jitter_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(slider_x_pos, so_y+2, UI_PANEL_WIDTH-slider_x_pos-30, 20), start_value=1, value_range=(0, 5), manager=self.manager, container=self.elements['spray_options_panel'])
+                
         # --- 矢量形状属性面板 ---
         self.elements['shape_props_panel'] = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect(5, y, UI_PANEL_WIDTH-25, panel_height), manager=self.manager, container=control_panel, starting_layer_height=1, visible=0)
         s_y = 5
@@ -219,6 +246,20 @@ class UIHandler:
         """显示像素笔刷属性面板。"""
         self.elements['shape_props_panel'].hide()
         self.elements['brush_panel'].show()
+
+    def update_brush_options_visibility(self, brush_type):
+        """根据选择的笔刷类型显示或隐藏特定的笔刷选项。"""
+        if brush_type == 'Circle':
+            self.elements['circle_options_panel'].show()
+            self.elements['spray_options_panel'].hide()
+        elif brush_type == 'Spray':
+            self.elements['circle_options_panel'].hide()
+            self.elements['spray_options_panel'].show()
+        else: # 'Line' 或其他任何类型
+            self.elements['circle_options_panel'].hide()
+            self.elements['spray_options_panel'].hide()
+
+
         
     def hide_all_tool_properties(self):
         """隐藏所有与工具相关的属性面板。"""

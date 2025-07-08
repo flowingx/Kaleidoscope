@@ -33,6 +33,13 @@ class App:
         self.brush_size = 1.0
         self.user_path, self.is_drawing = [], False
         
+        self.brush_spacing = 100.0  # (计划 2) Circle笔刷的间距，百分比
+        self.brush_color_jitter = 0.0 # (计划 3) 颜色抖动, 0.0 to 1.0
+        self.brush_flow = 30.0        # (计划 4) Spray笔刷的流量（每秒喷洒次数）
+        self.brush_size_jitter = 1.0  # (计划 5) Spray笔刷的粒子大小变化（像素）
+        self.spray_timer = 0.0        # (计划 4) 用于流量控制的计时器
+
+        
         # 矢量形状相关状态
         self.active_tool = 'brush'
         self.selected_shape = None
@@ -85,6 +92,8 @@ class App:
         self._update_layer_list_ui()
         self.ui_handler.update_tool_buttons(self.active_tool)
         self.ui_handler.show_brush_properties()
+        self.ui_handler.update_brush_options_visibility(self.brush_type)
+
 
     def _calculate_and_update_brush_size(self, slider_value):
         normalized_value = (slider_value - 1) / (15 - 1)
@@ -213,9 +222,20 @@ class App:
                 if self.selected_shape: self._action_modify_selected_shape({'size': event.value})
             elif el == self.ui_handler.elements['shape_rot_slider']:
                  if self.selected_shape: self._action_modify_selected_shape({'rotation': event.value})
+            elif el == self.ui_handler.elements['brush_spacing_slider']:
+                self.brush_spacing = event.value
+            elif el == self.ui_handler.elements['brush_color_jitter_slider']:
+                self.brush_color_jitter = event.value / 100.0 # 转换为 0-1 范围
+            elif el == self.ui_handler.elements['brush_flow_slider']:
+                self.brush_flow = event.value
+            elif el == self.ui_handler.elements['brush_size_jitter_slider']:
+                self.brush_size_jitter = event.value
+
 
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.ui_handler.elements['brush_dropdown']:
             self.brush_type = event.text
+            self.ui_handler.update_brush_options_visibility(self.brush_type)
+
 
         if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.ui_handler.elements['layer_list']:
             for i, layer in enumerate(self.layers):
@@ -254,6 +274,16 @@ class App:
 
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)
+
+        if self.is_drawing and self.brush_type == 'Spray':
+            self.spray_timer += time_delta_seconds
+            flow_interval = 1.0 / self.brush_flow
+            while self.spray_timer >= flow_interval:
+                self.spray_timer -= flow_interval
+                current_pos = pygame.mouse.get_pos()
+                # 确保只在绘制区域内添加点
+                if pygame.Rect(0, 0, config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT).collidepoint(current_pos):
+                    self.user_path.append({'pos': current_pos, 'size': self.brush_size})
         self._update_ui_button_states()
         
         self.ui_handler.update_tool_buttons(self.active_tool)
@@ -265,6 +295,7 @@ class App:
         
         self.export_manager.update()
         self.export_manager.update_timer(time_delta_seconds * 1000)
+
 
     def _draw(self):
         self.screen.fill(config.BACKGROUND_COLOR)
@@ -431,51 +462,79 @@ class App:
         这是实现不同笔刷效果的核心。
         """
         if not self.user_path:
-            self.is_drawing = False
+            self.is_drawing, self.spray_timer = False, 0.0
             return
-            
+
         elements_to_draw = []
         path_len = len(self.user_path)
 
-        if self.brush_type == 'Line':
-            # 线性笔刷：在路径点之间进行插值，形成连续的线条。
-            # 至少需要两个点才能形成线条。
-            if path_len < 2:
-                self.is_drawing = False; self.user_path.clear(); return
-
+        # [FIX] 将 path_length_pixels 的计算提到所有 if/elif 之前
+        # 这样 'Line' 和 'Circle' 笔刷都可以安全地使用它。
+        path_length_pixels = 0
+        if path_len >= 2:
             path_length_pixels = sum(pygame.Vector2(self.user_path[i+1]['pos']).distance_to(self.user_path[i]['pos']) for i in range(path_len-1))
+
+        if self.brush_type == 'Line':
+            if path_len < 2 or path_length_pixels == 0:
+                self.is_drawing, self.spray_timer = False, 0.0; self.user_path.clear(); return
+
             current_dist = 0
-            if path_length_pixels > 0:
-                for i in range(path_len-1):
-                    p1, p2 = self.user_path[i], self.user_path[i+1]
-                    dist = pygame.Vector2(p2['pos']).distance_to(p1['pos'])
-                    steps = max(1, int(dist))
-                    for j in range(steps):
-                        t = j / steps
-                        pos = pygame.Vector2(p1['pos']).lerp(p2['pos'], t)
-                        size = p1['size'] * (1 - t) + p2['size'] * t
-                        color_t = (current_dist + dist*t) / path_length_pixels
-                        color = utils.lerp_color(self.start_color, self.end_color, color_t)
-                        elements_to_draw.append({'pos': pos, 'color': color, 'size': int(size), 'type': 'Circle'})
-                    current_dist += dist
+            for i in range(path_len-1):
+                p1, p2 = self.user_path[i], self.user_path[i+1]
+                dist = pygame.Vector2(p2['pos']).distance_to(p1['pos'])
+                steps = max(1, int(dist))
+                for j in range(steps):
+                    t = j / steps
+                    pos = pygame.Vector2(p1['pos']).lerp(p2['pos'], t)
+                    size = p1['size'] * (1 - t) + p2['size'] * t
+                    color_t = (current_dist + dist*t) / path_length_pixels
+                    color = utils.lerp_color(self.start_color, self.end_color, color_t)
+                    elements_to_draw.append({'pos': pos, 'color': color, 'size': int(size), 'type': 'Circle'})
+                current_dist += dist
 
         elif self.brush_type == 'Circle':
-            # 圆形笔刷：在每个路径点上绘制一个独立的圆，不插值。
-            for i, point_data in enumerate(self.user_path):
-                # 颜色根据点在路径中的位置进行插值
-                color_t = i / (path_len - 1) if path_len > 1 else 0.5
-                color = utils.lerp_color(self.start_color, self.end_color, color_t)
-                elements_to_draw.append({
-                    'pos': point_data['pos'],
-                    'color': color,
-                    'size': int(point_data['size']),
-                    'type': 'Circle'
-                })
+            if path_len < 2 or path_length_pixels == 0:
+                self.is_drawing, self.spray_timer = False, 0.0; self.user_path.clear(); return
+
+            distance_covered = 0.0
+            distance_since_last_stamp = 0.0
+
+            for i in range(path_len - 1):
+                p1_data, p2_data = self.user_path[i], self.user_path[i+1]
+                p1, p2 = pygame.Vector2(p1_data['pos']), pygame.Vector2(p2_data['pos'])
+                segment_length = p1.distance_to(p2)
+                if segment_length == 0: continue
+
+                dist_in_segment = 0.0
+                while dist_in_segment < segment_length:
+                    current_t = dist_in_segment / segment_length if segment_length > 0 else 0
+                    current_size = p1_data['size'] * (1 - current_t) + p2_data['size'] * current_t
+                    spacing_pixels = current_size * (self.brush_spacing / 100.0)
+
+                    if distance_since_last_stamp >= spacing_pixels:
+                        stamp_pos = p1.lerp(p2, current_t)
+                        path_t = (distance_covered + dist_in_segment) / path_length_pixels
+                        jitter_amount = self.brush_color_jitter * (random.random() - 0.5)
+                        final_t = max(0.0, min(1.0, path_t + jitter_amount))
+                        color = utils.lerp_color(self.start_color, self.end_color, final_t)
+                        
+                        elements_to_draw.append({
+                            'pos': stamp_pos,
+                            'color': color,
+                            'size': int(current_size),
+                            'type': 'Circle'
+                        })
+                        distance_since_last_stamp = 0
+
+                    step = 1.0 
+                    dist_in_segment += step
+                    distance_since_last_stamp += step
+                
+                distance_covered += segment_length
 
         elif self.brush_type == 'Spray':
-            # 喷漆笔刷：在每个路径点周围随机喷洒小点。
-            spray_radius_multiplier = 5  # 喷洒半径与笔刷大小的乘数
-            dots_per_size_unit = 2       # 每单位笔刷大小产生的点数
+            spray_radius_multiplier = 5
+            dots_per_size_unit = 2
             
             for i, point_data in enumerate(self.user_path):
                 center_pos = pygame.Vector2(point_data['pos'])
@@ -483,7 +542,6 @@ class App:
                 num_dots = int(brush_size * dots_per_size_unit)
                 spray_radius = brush_size * spray_radius_multiplier
                 
-                # 基础颜色根据点在路径中的位置进行插值
                 color_t = i / (path_len - 1) if path_len > 1 else 0.5
                 base_color = utils.lerp_color(self.start_color, self.end_color, color_t)
 
@@ -491,25 +549,31 @@ class App:
                     random_angle = random.uniform(0, 360)
                     sigma = spray_radius / 3.0
                     random_dist = abs(random.gauss(0, sigma))
-                    # 计算随机偏移量
                     offset = pygame.Vector2(random_dist, 0).rotate(random_angle)
                     dot_pos = center_pos + offset
+
+                    min_size = max(1, 2 - self.brush_size_jitter)
+                    max_size = 2 + self.brush_size_jitter
+                    dot_size = random.uniform(min_size, max_size)
+
                     elements_to_draw.append({
                         'pos': dot_pos,
                         'color': base_color,
-                        'size': 2,  # 喷雾点使用固定的较小尺寸
+                        'size': int(dot_size),
                         'type': 'Circle'
                     })
 
         if elements_to_draw:
             action = AddPixelAction(
-                layer=self.layers[self.active_layer_index], elements=elements_to_draw, 
+                layer=self.layers[self.active_layer_index], elements=elements_to_draw,
                 num_slices=self.num_slices, symmetry_mode=self.symmetry_mode
             )
             self.history_manager.execute_action(action)
-        
+
         self.is_drawing = False
         self.user_path.clear()
+        self.spray_timer = 0.0
+
         
     def _action_clear_all(self):
         if not self.layers: return
