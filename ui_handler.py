@@ -83,8 +83,8 @@ class UIHandler:
         self.elements['symmetry_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, UI_PANEL_WIDTH-40, lh), text="Symmetry", manager=self.manager, container=control_panel)
         y += lh
         # [FIX] Adjusted button widths to fit text
-        self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 125, eh), text='mirror', manager=self.manager, container=control_panel)
-        self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(145, y, 65, eh), text='Rotate', manager=self.manager, container=control_panel)
+        self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='mirror', manager=self.manager, container=control_panel)
+        self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Rotate', manager=self.manager, container=control_panel)
         y += eh + p
         
         self.elements['slice_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 60, eh), text="Slices:", manager=self.manager, container=control_panel)
@@ -99,10 +99,10 @@ class UIHandler:
         # --- 颜色选择器 ---
         self.elements['color_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, UI_PANEL_WIDTH - 40, lh), text="Color", manager=self.manager, container=control_panel)
         y += lh
-        self.elements['start_color_rect'] = pygame.Rect(DRAW_AREA_WIDTH + 15, y, 85, 40)
-        self.elements['end_color_rect'] = pygame.Rect(DRAW_AREA_WIDTH + 120, y, 85, 40)
+        self.elements['start_color_rect'] = pygame.Rect(DRAW_AREA_WIDTH + 15, y, 90, 40)
+        self.elements['end_color_rect'] = pygame.Rect(DRAW_AREA_WIDTH + 122, y, 90, 40)
         y += 40 + p
-        spectrum_rect_size = (UI_PANEL_WIDTH - 50, 100)
+        spectrum_rect_size = (UI_PANEL_WIDTH - 20, 100)
         self.elements['spectrum_rect'] = pygame.Rect((DRAW_AREA_WIDTH + 15, y), spectrum_rect_size)
         self.spectrum_surface = utils.create_color_spectrum(spectrum_rect_size)
         y += 100 + sp
@@ -111,11 +111,27 @@ class UIHandler:
         # --- 动态效果与辅助工具 ---
         self.elements['dynamics_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, UI_PANEL_WIDTH-40, lh), text="Dynamics & Aids", manager=self.manager, container=control_panel)
         y += lh
-        self.elements['global_rotate_toggle'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='Global Rot', manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
-        self.elements['object_rotate_toggle'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Object Rot', manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
+        # 定义两列的X坐标和按钮宽度/间隙
+        col1_x = 10
+        col2_x = 125
+        button_width1, button_width2 = 110,75
+        self.elements['global_rotate_toggle'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(col1_x, y, button_width1, eh), 
+            text='Global Rot', 
+            manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
+        self.elements['pulse_toggle'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(col2_x, y, button_width2, eh), 
+            text='Pulse', 
+            manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
         y += eh + p
-        self.elements['pulse_toggle'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='Pulse', manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
-        self.elements['trail_toggle'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Trail', manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
+        self.elements['object_rotate_toggle'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(col1_x, y, button_width1, eh), 
+            text='Object Rot', 
+            manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
+        self.elements['trail_toggle'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(col2_x, y, button_width2, eh), 
+            text='Trail', 
+            manager=self.manager, container=control_panel, object_id='#dynamic_toggle_button')
         y += eh + p
         self.elements['guides_value_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 95, eh), text="Guides: Off", manager=self.manager, container=control_panel)
         self.elements['guides_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(115, y + 5, 95, 20), start_value=0, value_range=(0, 3), manager=self.manager, container=control_panel)
