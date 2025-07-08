@@ -74,7 +74,7 @@ class UIHandler:
         self.elements['shape_rot_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, s_y, 40, lh), text="Rot:", manager=self.manager, container=self.elements['shape_props_panel'])
         self.elements['shape_rot_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(50, s_y, 140, 20), start_value=0, value_range=(0, 360), manager=self.manager, container=self.elements['shape_props_panel'])
         s_y += lh + p * 2
-        self.elements['delete_shape_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(5, s_y, 185, 30), text='Delete Selected Shape', manager=self.manager, container=self.elements['shape_props_panel'])
+        self.elements['delete_shape_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(5, s_y, 185, 30), text='Del Selected Shape', manager=self.manager, container=self.elements['shape_props_panel'])
         
         y += panel_height + sp
         self._create_divider(y - sp/2, control_panel)
@@ -157,7 +157,7 @@ class UIHandler:
 
         self.elements['layer_list'] = pygame_gui.elements.UISelectionList(relative_rect=pygame.Rect(10, 80, 160, SCREEN_HEIGHT - 175), item_list=[], manager=self.manager, container=layer_panel)
         self.elements['clear_all_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, SCREEN_HEIGHT - 90, 160, 30), text='Clear All Drawings', manager=self.manager, container=layer_panel)
-        self.elements['delete_layer_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, SCREEN_HEIGHT - 55, 160, 30), text='Delete Selected Layer', manager=self.manager, container=layer_panel)
+        self.elements['delete_layer_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, SCREEN_HEIGHT - 55, 160, 30), text='Del Layer', manager=self.manager, container=layer_panel)
     
     def update_tool_buttons(self, active_tool):
         """
