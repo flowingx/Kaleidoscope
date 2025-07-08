@@ -190,6 +190,9 @@ class App:
             elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
             elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'
             elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotate'
+            
+            # [FIX] Logic is now just toggling the state variable.
+            # The visual update is handled in _update_ui_button_states.
             elif el == self.ui_handler.elements['global_rotate_toggle']: self.enable_global_rotation = not self.enable_global_rotation
             elif el == self.ui_handler.elements['object_rotate_toggle']: self.enable_object_rotation = not self.enable_object_rotation
             elif el == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing
@@ -224,6 +227,7 @@ class App:
             self._action_start_export()
     
     def _update_ui_button_states(self):
+        """[FIX] Force UI buttons to reflect the application's state every frame."""
         if self.symmetry_mode == 'Kaleidoscope':
             self.ui_handler.elements['kaleido_btn'].select()
             self.ui_handler.elements['rotate_btn'].unselect()
@@ -238,8 +242,12 @@ class App:
             self.enable_trails: self.ui_handler.elements['trail_toggle'],
         }
         for is_enabled, button in toggles.items():
-            if is_enabled: button.select()
-            else: button.unselect()
+            if is_enabled:
+                if not button.is_selected:
+                    button.select()
+            else:
+                if button.is_selected:
+                    button.unselect()
 
         if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
         else: self.ui_handler.elements['undo_btn'].hide()
@@ -248,9 +256,8 @@ class App:
 
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)
-        self._update_ui_button_states()
+        self._update_ui_button_states() # [FIX] Add this call
         
-        # [FIX] Continuously update tool button icons to prevent visual state loss.
         self.ui_handler.update_tool_buttons(self.active_tool)
 
         if self.enable_global_rotation: self.global_rotation_angle = (self.global_rotation_angle - 0.5) % 360
@@ -298,7 +305,6 @@ class App:
                     transformed_points.append(final_pos)
                 pygame.draw.lines(self.screen, config.PREVIEW_LINE_COLOR, False, transformed_points, 2)
 
-        # [FIX] Manually draw the highlight for the active layer.
         self._draw_layer_highlight()
 
         self.ui_manager.draw_ui(self.screen)
@@ -313,32 +319,26 @@ class App:
             layer_list = self.ui_handler.elements['layer_list']
             if not layer_list.item_list: return
 
-            # Calculate the position of the selected item
             list_rect = layer_list.get_abs_rect()
             item_height = layer_list.list_item_height
-            # This is a bit of a hack, assuming the list container holds the items
             list_view_rect = layer_list.viewable_area.get_abs_rect() 
 
             scroll_offset = 0
             if layer_list.scroll_bar:
                 scroll_offset = layer_list.scroll_bar.scroll_position
 
-            # Position of the item relative to the top of the *full* list
             item_y_in_full_list = self.active_layer_index * item_height
-            # Position of the item relative to the *visible* part of the list
-            visible_item_y = list_rect.top + 5 + item_y_in_full_list - scroll_offset # +5 is default padding
+            visible_item_y = list_rect.top + 5 + item_y_in_full_list - scroll_offset 
 
-            # Only draw if the item is visible
             if visible_item_y >= list_view_rect.top and (visible_item_y + item_height) <= list_view_rect.bottom:
                 highlight_rect = pygame.Rect(
-                    list_rect.left + 5,  # Account for padding
+                    list_rect.left + 5,
                     visible_item_y,
-                    list_rect.width - 25, # Account for padding and scrollbar
+                    list_rect.width - 25,
                     item_height
                 )
                 pygame.draw.rect(self.screen, config.SELECTION_COLOR, highlight_rect, 2, border_radius=3)
         except (KeyError, AttributeError):
-            # Fails gracefully if the layer list or its components don't exist yet
             pass
 
     def _set_active_tool(self, tool_name):
@@ -347,7 +347,8 @@ class App:
         if self.selected_shape: self.selected_shape = None
         if tool_name == 'brush': self.ui_handler.show_brush_properties()
         else: self.ui_handler.hide_all_tool_properties()
-        # No need to call update_tool_buttons here, _update loop handles it
+        
+        self.ui_handler.update_tool_buttons(self.active_tool)
 
     def _start_shape_creation(self, pos):
         self.is_creating_shape = True

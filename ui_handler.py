@@ -149,7 +149,6 @@ class UIHandler:
         layer_panel = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect((DRAW_AREA_WIDTH + UI_PANEL_WIDTH, 0, LAYER_PANEL_WIDTH, SCREEN_HEIGHT)), manager=self.manager)
         self.elements['layer_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(0, 5, LAYER_PANEL_WIDTH, 20), text="Layers", manager=self.manager, container=layer_panel, object_id="@centered_label")
         
-        # [FIX] Removed generate/skip buttons, only Add Layer button remains.
         self.elements['add_layer_btn'] = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect(10, 30, 160, 40), 
             text='Add New Layer', 
