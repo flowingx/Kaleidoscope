@@ -82,8 +82,9 @@ class UIHandler:
         # --- 对称性设置 ---
         self.elements['symmetry_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, UI_PANEL_WIDTH-40, lh), text="Symmetry", manager=self.manager, container=control_panel)
         y += lh
-        self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='Kaleido', manager=self.manager, container=control_panel)
-        self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Rotate', manager=self.manager, container=control_panel)
+        # [FIX] Adjusted button widths to fit text
+        self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 125, eh), text='mirror', manager=self.manager, container=control_panel)
+        self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(145, y, 65, eh), text='Rotate', manager=self.manager, container=control_panel)
         y += eh + p
         
         self.elements['slice_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 60, eh), text="Slices:", manager=self.manager, container=control_panel)
@@ -132,9 +133,12 @@ class UIHandler:
         layer_panel = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect((DRAW_AREA_WIDTH + UI_PANEL_WIDTH, 0, LAYER_PANEL_WIDTH, SCREEN_HEIGHT)), manager=self.manager)
         self.elements['layer_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(0, 5, LAYER_PANEL_WIDTH, 20), text="Layers", manager=self.manager, container=layer_panel, object_id="@centered_label")
         
-        generate_button_rect = pygame.Rect(10, 30, 160, 40)
-        self.elements['generate_btn'] = pygame_gui.elements.UIButton(relative_rect=generate_button_rect, text='Generate New Layer', manager=self.manager, container=layer_panel)
-        self.elements['skip_animation_btn'] = pygame_gui.elements.UIButton(relative_rect=generate_button_rect, text="I Can't Wait!", manager=self.manager, container=layer_panel, visible=0)
+        # [FIX] Removed generate/skip buttons, only Add Layer button remains.
+        self.elements['add_layer_btn'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(10, 30, 160, 40), 
+            text='Add New Layer', 
+            manager=self.manager, 
+            container=layer_panel)
 
         self.elements['layer_list'] = pygame_gui.elements.UISelectionList(relative_rect=pygame.Rect(10, 80, 160, SCREEN_HEIGHT - 175), item_list=[], manager=self.manager, container=layer_panel)
         self.elements['clear_all_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, SCREEN_HEIGHT - 90, 160, 30), text='Clear All Drawings', manager=self.manager, container=layer_panel)

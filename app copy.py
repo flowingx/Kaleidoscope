@@ -57,6 +57,7 @@ class App:
         self.guide_line_slices = 0
 
         # 图层管理
+        # [FIX] Start with a standard, deletable layer instead of a special "Background"
         self.layers = [Layer()]
         self.active_layer_index = 0
         
@@ -87,6 +88,7 @@ class App:
         self.ui_handler.show_brush_properties()
 
     def _calculate_and_update_brush_size(self, slider_value):
+        # Your easing function for brush size
         normalized_value = (slider_value - 1) / (15 - 1)
         final_brush_size = 1 + normalized_value**2 * 9
         self.ui_handler.elements['brush_size_value_label'].set_text(f"{final_brush_size:.1f}")
@@ -98,7 +100,7 @@ class App:
             rect = self.ui_handler.elements['layer_list'].relative_rect
             self.ui_handler.elements['layer_list'].kill()
         else:
-            return
+            return # Should not happen after init
 
         item_list = [l.name for l in self.layers]
         selected_item = self.layers[self.active_layer_index].name if self.layers and self.active_layer_index < len(self.layers) else None
@@ -113,25 +115,32 @@ class App:
                 except AttributeError: pass
 
     def run(self):
+        """启动并维持应用程序的主循环。"""
         while self.is_running:
             time_delta_seconds = self.clock.tick(config.FPS) / 1000.0
+            
             self._handle_events()
             self._update(time_delta_seconds)
             self._draw()
 
     def _handle_events(self):
+        """处理一帧内的所有事件，包括退出、键盘和鼠标事件。"""
         is_input_blocked = self.export_manager.is_active() or self.export_window is not None
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.is_running = False
             
+            # --- Keyboard Shortcuts ---
             if event.type == pygame.KEYDOWN and not is_input_blocked:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                     if self.selected_shape: self._action_delete_selected_shape()
+                
                 if event.mod & pygame.KMOD_CTRL:
                     if event.key == pygame.K_z: self.history_manager.undo()
                     if event.key == pygame.K_y: self.history_manager.redo()
 
+            # --- Mouse Events ---
             if not is_input_blocked:
                 self._handle_mouse_events(event)
             
@@ -159,8 +168,9 @@ class App:
                     self._handle_selection(event.pos)
         
         if event.type == pygame.MOUSEMOTION:
-            if self.is_drawing and pygame.Rect(0, 0, config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT).collidepoint(event.pos):
-                self.user_path.append({'pos': event.pos, 'size': self.brush_size})
+            if self.is_drawing:
+                if pygame.Rect(0, 0, config.DRAW_AREA_WIDTH, config.SCREEN_HEIGHT).collidepoint(event.pos):
+                    self.user_path.append({'pos': event.pos, 'size': self.brush_size})
             elif self.is_creating_shape:
                 self._update_shape_creation(event.pos)
             elif self.selected_shape and event.buttons[0]:
@@ -169,7 +179,8 @@ class App:
                 self._update_shape_rotation(event.pos)
         
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if self.is_drawing: self._action_finish_drawing()
+            if self.is_drawing:
+                self._action_finish_drawing()
             elif self.is_creating_shape: self._finish_shape_creation()
             elif self.shape_drag_offset: self._finish_shape_drag()
             elif self.is_rotating_shape: self._finish_shape_rotation()
@@ -181,6 +192,7 @@ class App:
             elif el == self.ui_handler.elements['select_tool_btn']: self._set_active_tool('select')
             elif el == self.ui_handler.elements['triangle_tool_btn']: self._set_active_tool('triangle')
             elif el == self.ui_handler.elements['star_tool_btn']: self._set_active_tool('star')
+            
             elif el == self.ui_handler.elements['add_layer_btn']: self._action_add_new_layer()
             elif el == self.ui_handler.elements['clear_all_btn']: self._action_clear_all()
             elif el == self.ui_handler.elements['delete_layer_btn']: self._action_delete_layer()
@@ -224,6 +236,9 @@ class App:
             self._action_start_export()
     
     def _update_ui_button_states(self):
+        """
+        Force UI buttons to reflect the application's state every frame.
+        """
         if self.symmetry_mode == 'Kaleidoscope':
             self.ui_handler.elements['kaleido_btn'].select()
             self.ui_handler.elements['rotate_btn'].unselect()
@@ -249,9 +264,6 @@ class App:
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)
         self._update_ui_button_states()
-        
-        # [FIX] Continuously update tool button icons to prevent visual state loss.
-        self.ui_handler.update_tool_buttons(self.active_tool)
 
         if self.enable_global_rotation: self.global_rotation_angle = (self.global_rotation_angle - 0.5) % 360
         if self.enable_object_rotation: self.object_rotation_angle = (self.object_rotation_angle + 1.0) % 360
@@ -274,18 +286,20 @@ class App:
 
         final_image = drawing.apply_global_dynamics(composite_image, self.global_rotation_angle, self.pulsing_scale, self.trail_frames)
         
-        if self.guide_line_slices > 0: drawing.draw_guide_lines(final_image, self.guide_line_slices)
+        if self.guide_line_slices > 0:
+            drawing.draw_guide_lines(final_image, self.guide_line_slices)
 
         self.screen.blit(final_image, (0, 0))
 
         if self.preview_shape: self.preview_shape.draw(self.screen)
         if self.selected_shape:
-            pygame.draw.rect(self.screen, config.SELECTION_COLOR, self.selected_shape.get_bounding_box(), 2)
+            pygame.draw.rect(self.screen, (0, 150, 255), self.selected_shape.get_bounding_box(), 2)
         
         if self.is_drawing and self.user_path and len(self.user_path) > 1:
             points_to_draw = [p['pos'] for p in self.user_path]
             slice_angle_deg = 360 / self.num_slices
             center_vector = pygame.Vector2(config.CENTER_X, config.CENTER_Y)
+
             for i in range(self.num_slices):
                 slice_rotation_angle = i * slice_angle_deg
                 transformed_points = []
@@ -298,56 +312,19 @@ class App:
                     transformed_points.append(final_pos)
                 pygame.draw.lines(self.screen, config.PREVIEW_LINE_COLOR, False, transformed_points, 2)
 
-        # [FIX] Manually draw the highlight for the active layer.
-        self._draw_layer_highlight()
-
         self.ui_manager.draw_ui(self.screen)
         self.ui_handler.draw_custom_ui(self.screen, self.start_color, self.end_color, self.active_color_selection, self.brush_size)
         self._draw_export_status()
         
         pygame.display.flip()
     
-    def _draw_layer_highlight(self):
-        """Draws a visible border around the currently active layer in the UI list."""
-        try:
-            layer_list = self.ui_handler.elements['layer_list']
-            if not layer_list.item_list: return
-
-            # Calculate the position of the selected item
-            list_rect = layer_list.get_abs_rect()
-            item_height = layer_list.list_item_height
-            # This is a bit of a hack, assuming the list container holds the items
-            list_view_rect = layer_list.viewable_area.get_abs_rect() 
-
-            scroll_offset = 0
-            if layer_list.scroll_bar:
-                scroll_offset = layer_list.scroll_bar.scroll_position
-
-            # Position of the item relative to the top of the *full* list
-            item_y_in_full_list = self.active_layer_index * item_height
-            # Position of the item relative to the *visible* part of the list
-            visible_item_y = list_rect.top + 5 + item_y_in_full_list - scroll_offset # +5 is default padding
-
-            # Only draw if the item is visible
-            if visible_item_y >= list_view_rect.top and (visible_item_y + item_height) <= list_view_rect.bottom:
-                highlight_rect = pygame.Rect(
-                    list_rect.left + 5,  # Account for padding
-                    visible_item_y,
-                    list_rect.width - 25, # Account for padding and scrollbar
-                    item_height
-                )
-                pygame.draw.rect(self.screen, config.SELECTION_COLOR, highlight_rect, 2, border_radius=3)
-        except (KeyError, AttributeError):
-            # Fails gracefully if the layer list or its components don't exist yet
-            pass
-
     def _set_active_tool(self, tool_name):
         if self.active_tool == tool_name: return
         self.active_tool = tool_name
         if self.selected_shape: self.selected_shape = None
         if tool_name == 'brush': self.ui_handler.show_brush_properties()
         else: self.ui_handler.hide_all_tool_properties()
-        # No need to call update_tool_buttons here, _update loop handles it
+        self.ui_handler.update_tool_buttons(self.active_tool)
 
     def _start_shape_creation(self, pos):
         self.is_creating_shape = True
@@ -441,7 +418,7 @@ class App:
                 for j in range(steps):
                     t = j / steps
                     pos = pygame.Vector2(p1['pos']).lerp(p2['pos'], t)
-                    size = p1['size'] * (1 - t) + p2['size'] * t
+                    size = p1['size'] * (1-t) + p2['size'] * size
                     color_t = (current_dist + dist*t) / path_length
                     color = utils.lerp_color(self.start_color, self.end_color, color_t)
                     draw_type = 'Circle' if self.brush_type == 'Line' else self.brush_type
@@ -459,11 +436,13 @@ class App:
         self.user_path.clear()
         
     def _action_clear_all(self):
+        """[FIX] Creates a ClearAllAction to handle removing all layers and creating a new one."""
         if not self.layers: return
-        action = ClearAllAction(self, list(self.layers))
+        action = ClearAllAction(self, list(self.layers)) # Pass a copy of current layers for undo
         self.history_manager.execute_action(action)
 
     def _action_delete_layer(self):
+        """[FIX] Prevents deletion of the last remaining layer."""
         if len(self.layers) > 1:
             layer_to_delete = self.layers[self.active_layer_index]
             index = self.active_layer_index

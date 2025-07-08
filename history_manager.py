@@ -3,6 +3,9 @@
 实现了命令模式，用于管理所有可撤销/重做的操作。
 包含一个 Action 基类和多个具体的动作子类，以及 HistoryManager 本身。
 """
+import drawing
+from layer import Layer
+
 
 class Action:
     """所有可撤销动作的基类。"""
@@ -87,7 +90,6 @@ class HistoryManager:
         """检查重做栈是否为空。"""
         return bool(self.redo_stack)
 
-# Keep existing layer actions for backward compatibility
 class DeleteLayerAction(Action):
     """记录“删除图层”的动作。"""
     def __init__(self, app, layer, index):
@@ -104,32 +106,50 @@ class DeleteLayerAction(Action):
         self.app._update_layer_list_ui()
 
 class ClearAllAction(Action):
-    """记录“清空所有图层”的动作。"""
+    """
+    [FIX] 记录“清空所有图层”的动作。
+    它会移除所有现有图层，然后创建一个新的空图层。
+    """
     def __init__(self, app, cleared_layers):
         self.app = app
-        self.cleared_layers = cleared_layers
+        self.cleared_layers = cleared_layers # The list of layers to be restored on undo
+        self.new_layer = None # The new layer that will be created
+
     def execute(self):
-        self.app.layers = [self.app.layers[-1]]
-        self.app.active_layer_index = 0
-        self.app._update_layer_list_ui()
-    def undo(self):
-        self.app.layers = self.cleared_layers + self.app.layers
+        self.app.layers.clear()
+        self.new_layer = Layer() # Create a fresh layer
+        self.app.layers.append(self.new_layer)
         self.app.active_layer_index = 0
         self.app._update_layer_list_ui()
 
+    def undo(self):
+        # Restore the old layers
+        self.app.layers = self.cleared_layers
+        self.app.active_layer_index = 0 # Reset active index to a safe value
+        self.app._update_layer_list_ui()
+
+
 class AddPixelAction(Action):
-    """记录一次完整的像素笔刷绘制动作（线、圆、喷涂）。"""
-    def __init__(self, layer, path, brush_type, draw_func):
+    """
+    记录一次完整的、对称的像素笔刷绘制动作。
+    它存储了所有绘制参数，以确保撤销/重做的一致性。
+    """
+    def __init__(self, layer, elements, num_slices, symmetry_mode):
         self.layer = layer
-        self.path = path
-        self.brush_type = brush_type
-        self.draw_func = draw_func
+        self.elements = elements
+        self.num_slices = num_slices
+        self.symmetry_mode = symmetry_mode
         self.undo_surface = None
 
     def execute(self):
-        """执行绘制，并在绘制前保存图层快照。"""
+        """执行对称绘制，并在绘制前保存图层快照。"""
         self.undo_surface = self.layer.surface.copy()
-        self.draw_func(self.layer.surface, self.path, self.brush_type)
+        drawing.draw_on_surface(
+            self.layer.surface, 
+            self.elements, 
+            self.num_slices, 
+            self.symmetry_mode
+        )
 
     def undo(self):
         """通过恢复快照来撤销绘制。"""
