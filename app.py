@@ -188,33 +188,13 @@ class App:
             elif el == self.ui_handler.elements['undo_btn']: self.history_manager.undo()
             elif el == self.ui_handler.elements['redo_btn']: self.history_manager.redo()
             elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
-
-            # [FIX] Merged logic from reference file. State change and UI update are in one place.
-            elif el == self.ui_handler.elements['kaleido_btn']: 
-                self.symmetry_mode = 'Kaleidoscope'
-                el.select()
-                self.ui_handler.elements['rotate_btn'].unselect()
-            elif el == self.ui_handler.elements['rotate_btn']: 
-                self.symmetry_mode = 'Rotate'
-                el.select()
-                self.ui_handler.elements['kaleido_btn'].unselect()
+            elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'
+            elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotate'
             
-            elif el == self.ui_handler.elements['global_rotate_toggle']: 
-                self.enable_global_rotation = not self.enable_global_rotation
-                if self.enable_global_rotation: el.select()
-                else: el.unselect()
-            elif el == self.ui_handler.elements['object_rotate_toggle']: 
-                self.enable_object_rotation = not self.enable_object_rotation
-                if self.enable_object_rotation: el.select()
-                else: el.unselect()
-            elif el == self.ui_handler.elements['pulse_toggle']: 
-                self.enable_pulsing = not self.enable_pulsing
-                if self.enable_pulsing: el.select()
-                else: el.unselect()
-            elif el == self.ui_handler.elements['trail_toggle']: 
-                self.enable_trails = not self.enable_trails
-                if self.enable_trails: el.select()
-                else: el.unselect()
+            elif el == self.ui_handler.elements['global_rotate_toggle']: self.enable_global_rotation = not self.enable_global_rotation
+            elif el == self.ui_handler.elements['object_rotate_toggle']: self.enable_object_rotation = not self.enable_object_rotation
+            elif el == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing
+            elif el == self.ui_handler.elements['trail_toggle']: self.enable_trails = not self.enable_trails
         
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
             el = event.ui_element
@@ -244,11 +224,37 @@ class App:
         if event.type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED and event.ui_element == self.export_window:
             self._action_start_export()
     
+    def _update_ui_button_states(self):
+        """ 
+        更新 UI 按钮状态以反映当前应用程序状态。
+        """
+        if self.symmetry_mode == 'Kaleidoscope':
+            self.ui_handler.elements['kaleido_btn'].select()
+            self.ui_handler.elements['rotate_btn'].unselect()
+        else:
+            self.ui_handler.elements['kaleido_btn'].unselect()
+            self.ui_handler.elements['rotate_btn'].select()
+
+        toggles = {
+            self.enable_global_rotation: self.ui_handler.elements['global_rotate_toggle'],
+            self.enable_object_rotation: self.ui_handler.elements['object_rotate_toggle'],
+            self.enable_pulsing: self.ui_handler.elements['pulse_toggle'],
+            self.enable_trails: self.ui_handler.elements['trail_toggle'],
+        }
+        for is_enabled, button in toggles.items():
+            if is_enabled:
+                button.select()
+            else:
+                button.unselect()
+
+        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
+        else: self.ui_handler.elements['undo_btn'].hide()
+        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
+        else: self.ui_handler.elements['redo_btn'].hide()
+
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)
-        
-        # [FIX] This separate update function is no longer needed, logic is in the event handler.
-        # self._update_ui_button_states() 
+        self._update_ui_button_states()
         
         self.ui_handler.update_tool_buttons(self.active_tool)
 
@@ -256,11 +262,6 @@ class App:
         if self.enable_object_rotation: self.object_rotation_angle = (self.object_rotation_angle + 1.0) % 360
         if self.enable_pulsing: self.pulsing_scale = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
         else: self.pulsing_scale = 1.0
-        
-        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
-        else: self.ui_handler.elements['undo_btn'].hide()
-        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
-        else: self.ui_handler.elements['redo_btn'].hide()
         
         self.export_manager.update()
         self.export_manager.update_timer(time_delta_seconds * 1000)
@@ -425,26 +426,79 @@ class App:
         self.history_manager.execute_action(action)
 
     def _action_finish_drawing(self):
-        if not self.user_path or len(self.user_path) < 2:
-            self.is_drawing = False; self.user_path.clear(); return
-        
+        """
+        将用户绘制的路径根据不同的笔刷类型（Line, Circle, Spray）转换成一系列可绘制的元素。
+        这是实现不同笔刷效果的核心。
+        """
+        if not self.user_path:
+            self.is_drawing = False
+            return
+            
         elements_to_draw = []
-        path_length = sum(pygame.Vector2(self.user_path[i+1]['pos']).distance_to(self.user_path[i]['pos']) for i in range(len(self.user_path)-1))
-        current_dist = 0
-        if path_length > 0:
-            for i in range(len(self.user_path)-1):
-                p1, p2 = self.user_path[i], self.user_path[i+1]
-                dist = pygame.Vector2(p2['pos']).distance_to(p1['pos'])
-                steps = max(1, int(dist))
-                for j in range(steps):
-                    t = j / steps
-                    pos = pygame.Vector2(p1['pos']).lerp(p2['pos'], t)
-                    size = p1['size'] * (1 - t) + p2['size'] * t
-                    color_t = (current_dist + dist*t) / path_length
-                    color = utils.lerp_color(self.start_color, self.end_color, color_t)
-                    draw_type = 'Circle' if self.brush_type == 'Line' else self.brush_type
-                    elements_to_draw.append({'pos': pos, 'color': color, 'size': int(size), 'type': draw_type})
-                current_dist += dist
+        path_len = len(self.user_path)
+
+        if self.brush_type == 'Line':
+            # 线性笔刷：在路径点之间进行插值，形成连续的线条。
+            # 至少需要两个点才能形成线条。
+            if path_len < 2:
+                self.is_drawing = False; self.user_path.clear(); return
+
+            path_length_pixels = sum(pygame.Vector2(self.user_path[i+1]['pos']).distance_to(self.user_path[i]['pos']) for i in range(path_len-1))
+            current_dist = 0
+            if path_length_pixels > 0:
+                for i in range(path_len-1):
+                    p1, p2 = self.user_path[i], self.user_path[i+1]
+                    dist = pygame.Vector2(p2['pos']).distance_to(p1['pos'])
+                    steps = max(1, int(dist))
+                    for j in range(steps):
+                        t = j / steps
+                        pos = pygame.Vector2(p1['pos']).lerp(p2['pos'], t)
+                        size = p1['size'] * (1 - t) + p2['size'] * t
+                        color_t = (current_dist + dist*t) / path_length_pixels
+                        color = utils.lerp_color(self.start_color, self.end_color, color_t)
+                        elements_to_draw.append({'pos': pos, 'color': color, 'size': int(size), 'type': 'Circle'})
+                    current_dist += dist
+
+        elif self.brush_type == 'Circle':
+            # 圆形笔刷：在每个路径点上绘制一个独立的圆，不插值。
+            for i, point_data in enumerate(self.user_path):
+                # 颜色根据点在路径中的位置进行插值
+                color_t = i / (path_len - 1) if path_len > 1 else 0.5
+                color = utils.lerp_color(self.start_color, self.end_color, color_t)
+                elements_to_draw.append({
+                    'pos': point_data['pos'],
+                    'color': color,
+                    'size': int(point_data['size']),
+                    'type': 'Circle'
+                })
+
+        elif self.brush_type == 'Spray':
+            # 喷漆笔刷：在每个路径点周围随机喷洒小点。
+            spray_radius_multiplier = 5  # 喷洒半径与笔刷大小的乘数
+            dots_per_size_unit = 2       # 每单位笔刷大小产生的点数
+            
+            for i, point_data in enumerate(self.user_path):
+                center_pos = pygame.Vector2(point_data['pos'])
+                brush_size = point_data['size']
+                num_dots = int(brush_size * dots_per_size_unit)
+                spray_radius = brush_size * spray_radius_multiplier
+                
+                # 基础颜色根据点在路径中的位置进行插值
+                color_t = i / (path_len - 1) if path_len > 1 else 0.5
+                base_color = utils.lerp_color(self.start_color, self.end_color, color_t)
+
+                for _ in range(num_dots):
+                    random_angle = random.uniform(0, 360)
+                    random_dist = random.uniform(0, spray_radius)
+                    # 计算随机偏移量
+                    offset = pygame.Vector2(random_dist, 0).rotate(random_angle)
+                    dot_pos = center_pos + offset
+                    elements_to_draw.append({
+                        'pos': dot_pos,
+                        'color': base_color,
+                        'size': 2,  # 喷雾点使用固定的较小尺寸
+                        'type': 'Circle'
+                    })
 
         if elements_to_draw:
             action = AddPixelAction(

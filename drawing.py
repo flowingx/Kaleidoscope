@@ -36,24 +36,29 @@ def draw_guide_lines(surface, num_slices):
 
 def draw_on_surface(surface, elements, num_slices, symmetry_mode):
     """
-    （旧版函数）根据对称性在表面上绘制像素笔刷元素（圆、喷涂）。
+    根据对称性在表面上绘制已生成的像素笔刷元素。
+    只负责绘制，不负责生成效果。
     """
     slice_angle = 360 / num_slices
     for element in elements:
-        pos = pygame.Vector2(element['pos']) - (CENTER_X, CENTER_Y)
-        for i in range(num_slices):
-            rotated_pos = pos.rotate(i * slice_angle)
-            if symmetry_mode == 'Kaleidoscope' and i % 2 == 1:
-                rotated_pos.y = -rotated_pos.y
-            draw_pos = (int(rotated_pos.x + CENTER_X), int(rotated_pos.y + CENTER_Y))
-            if element['type'] == 'Circle':
+        if element['type'] == 'Circle':
+            pos = pygame.Vector2(element['pos']) - (CENTER_X, CENTER_Y)
+            for i in range(num_slices):
+                rotated_pos = pos.rotate(i * slice_angle)
+                if symmetry_mode == 'Kaleidoscope' and i % 2 == 1:
+                    rotated_pos.y = -rotated_pos.y
+                draw_pos = (int(rotated_pos.x + CENTER_X), int(rotated_pos.y + CENTER_Y))
                 pygame.draw.circle(surface, element['color'], draw_pos, int(element['size']))
-            elif element['type'] == 'Spray':
-                for _ in range(10):
-                    offset_x = random.randint(-element['size'], element['size'])
-                    offset_y = random.randint(-element['size'], element['size'])
-                    if offset_x**2 + offset_y**2 < element['size']**2:
-                        pygame.draw.circle(surface, element['color'], (draw_pos[0] + offset_x, draw_pos[1] + offset_y), 1)
+        elif element['type'] == 'Spray':
+            for spray_point in element['points']:
+                pos = pygame.Vector2(spray_point) - (CENTER_X, CENTER_Y)
+                for i in range(num_slices):
+                    rotated_pos = pos.rotate(i * slice_angle)
+                    if symmetry_mode == 'Kaleidoscope' and i % 2 == 1:
+                        rotated_pos.y = -rotated_pos.y
+                    draw_pos = (int(rotated_pos.x + CENTER_X), int(rotated_pos.y + CENTER_Y))
+                    pygame.draw.circle(surface, element['color'], draw_pos, int(element['size']))
+
 
 def get_composite_image(layers, num_slices, symmetry_mode, object_rotation_angle):
     """

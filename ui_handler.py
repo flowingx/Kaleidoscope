@@ -82,7 +82,6 @@ class UIHandler:
         # --- 对称性设置 ---
         self.elements['symmetry_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, UI_PANEL_WIDTH-40, lh), text="Symmetry", manager=self.manager, container=control_panel)
         y += lh
-        # [FIX] Adjusted button widths to fit text
         self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='mirror', manager=self.manager, container=control_panel)
         self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Rotate', manager=self.manager, container=control_panel)
         y += eh + p
@@ -172,7 +171,6 @@ class UIHandler:
         }
 
         # 从主题中获取按钮的背景色
-        # 我们假设所有状态的背景色都一样
         try:
             bg_color = self.manager.ui_theme.get_colour('#tool_button', 'normal_bg')
         except (ValueError, AttributeError):

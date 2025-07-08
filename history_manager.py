@@ -1,4 +1,3 @@
-# history_manager.py
 """
 实现了命令模式，用于管理所有可撤销/重做的操作。
 包含一个 Action 基类和多个具体的动作子类，以及 HistoryManager 本身。
@@ -107,25 +106,24 @@ class DeleteLayerAction(Action):
 
 class ClearAllAction(Action):
     """
-    [FIX] 记录“清空所有图层”的动作。
-    它会移除所有现有图层，然后创建一个新的空图层。
+    记录“清空所有图层”的动作。
+    移除所有现有图层，然后创建一个新的空图层。
     """
     def __init__(self, app, cleared_layers):
         self.app = app
-        self.cleared_layers = cleared_layers # The list of layers to be restored on undo
-        self.new_layer = None # The new layer that will be created
+        self.cleared_layers = cleared_layers # 保存清空前的图层列表
+        self.new_layer = None
 
     def execute(self):
         self.app.layers.clear()
-        self.new_layer = Layer() # Create a fresh layer
+        self.new_layer = Layer()
         self.app.layers.append(self.new_layer)
         self.app.active_layer_index = 0
         self.app._update_layer_list_ui()
 
     def undo(self):
-        # Restore the old layers
         self.app.layers = self.cleared_layers
-        self.app.active_layer_index = 0 # Reset active index to a safe value
+        self.app.active_layer_index = 0 
         self.app._update_layer_list_ui()
 
 
