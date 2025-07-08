@@ -1,0 +1,15 @@
+Here are the contents for the file `py_game_Kaleidoscope/assets/brush_un.svg`:
+
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect width="48" height="48" fill="#282c34" />
+  <path d="M24 4L20 8H28L24 4Z" fill="#abb2bf"/>
+  <path d="M24 8L20 12H28L24 8Z" fill="#abb2bf"/>
+  <path d="M24 12L20 16H28L24 12Z" fill="#abb2bf"/>
+  <path d="M24 16L20 20H28L24 16Z" fill="#abb2bf"/>
+  <path d="M24 20L20 24H28L24 20Z" fill="#abb2bf"/>
+  <path d="M24 24L20 28H28L24 24Z" fill="#abb2bf"/>
+  <path d="M24 28L20 32H28L24 28Z" fill="#abb2bf"/>
+  <path d="M24 32L20 36H28L24 32Z" fill="#abb2bf"/>
+  <path d="M24 36L20 40H28L24 36Z" fill="#abb2bf"/>
+  <path d="M24 40L20 44H28L24 40Z" fill="#abb2bf"/>
+</svg>

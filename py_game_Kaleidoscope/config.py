@@ -1,3 +1,4 @@
+# filepath: f:\X_code\Projects\25_summer_python\py_game_Kaleidoscope\config.py
 """
 存储应用程序的所有全局配置常量。
 包括屏幕尺寸、布局、文件路径和颜色定义等。
@@ -25,32 +26,6 @@ LAYER_PANEL_WIDTH = 180
 DRAW_AREA_WIDTH = SCREEN_WIDTH - UI_PANEL_WIDTH - LAYER_PANEL_WIDTH
 CENTER_X, CENTER_Y = DRAW_AREA_WIDTH // 2, SCREEN_HEIGHT // 2
 
-# --- UI ---
-TOOL_BUTTON_SIZE = (45, 45)
-ASSETS_PATH = os.path.join(PROJECT_ROOT, 'assets')
-ICONS = {
-    'brush': {
-        'normal': os.path.join(ASSETS_PATH, 'brush_un.png'),
-        'hover': os.path.join(ASSETS_PATH, 'brush_un.png'), # 使用未选中图标作为悬停
-        'selected': os.path.join(ASSETS_PATH, 'brush_se.png'),
-    },
-    'select': {
-        'normal': os.path.join(ASSETS_PATH, 'select_un.png'),
-        'hover': os.path.join(ASSETS_PATH, 'select_un.png'),
-        'selected': os.path.join(ASSETS_PATH, 'select_se.png'),
-    },
-    'triangle': {
-        'normal': os.path.join(ASSETS_PATH, 'triangle_un.png'),
-        'hover': os.path.join(ASSETS_PATH, 'triangle_un.png'),
-        'selected': os.path.join(ASSETS_PATH, 'triangle_se.png'),
-    },
-    'star': {
-        'normal': os.path.join(ASSETS_PATH, 'star_un.png'),
-        'hover': os.path.join(ASSETS_PATH, 'star_un.png'),
-        'selected': os.path.join(ASSETS_PATH, 'star_se.png'),
-    }
-}
-
 # --- 性能 ---
 FPS = 60
 GUIDE_LINE_COLOR = (80, 80, 80)
@@ -73,3 +48,18 @@ STATUS_TEXT_COLOR = (255, 255, 0)
 PREVIEW_LINE_COLOR = (200, 200, 200)
 BACKGROUND_COLOR = (20, 20, 20)
 SELECTION_COLOR = (0, 150, 255) # 用于选择框和旋转手柄的颜色
+
+# --- 图标路径 ---
+BRUSH_ICON_SELECTED = os.path.join(PROJECT_ROOT, 'assets', 'brush_se.svg')
+BRUSH_ICON_UNSELECTED = os.path.join(PROJECT_ROOT, 'assets', 'brush_un.svg')
+SELECT_ICON_SELECTED = os.path.join(PROJECT_ROOT, 'assets', 'select_se.svg')
+SELECT_ICON_UNSELECTED = os.path.join(PROJECT_ROOT, 'assets', 'select_un.svg')
+STAR_ICON_SELECTED = os.path.join(PROJECT_ROOT, 'assets', 'star_se.svg')
+STAR_ICON_UNSELECTED = os.path.join(PROJECT_ROOT, 'assets', 'star_un.svg')
+TRIANGLE_ICON_SELECTED = os.path.join(PROJECT_ROOT, 'assets', 'triangle_se.svg')
+TRIANGLE_ICON_UNSELECTED = os.path.join(PROJECT_ROOT, 'assets', 'triangle_un.svg')
+
+# --- 切片数量 ---
+SLICE_COUNT_MIN = 4
+SLICE_COUNT_MAX = 16
+SLICE_COUNT_STEP = 2

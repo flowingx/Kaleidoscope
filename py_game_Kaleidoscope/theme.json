@@ -1,0 +1,52 @@
+{
+  "defaults": {
+    "colours": {
+      "normal_bg": "#282c34",
+      "hovered_bg": "#3c4049",
+      "disabled_bg": "#252525",
+      "selected_bg": "#528bff",
+      "dark_bg": "#1c1f24",
+      "normal_text": "#abb2bf",
+      "hovered_text": "#ffffff",
+      "selected_text": "#ffffff",
+      "disabled_text": "#606060",
+      "link_text": "#61afef",
+      "link_hover": "#c678dd",
+      "link_selected": "#e06c75"
+    }
+  },
+  "UIButton": {
+    "colours": {
+      "normal_bg": "#282c34",
+      "hovered_bg": "#3c4049",
+      "selected_bg": "#528bff",
+      "selected_hovered_bg": "#3c4049"
+    },
+    "misc": {
+      "fixed_size": [48, 48]
+    }
+  },
+  "tool_buttons": {
+    "brush": {
+      "icon_selected": "assets/brush_se.svg",
+      "icon_unselected": "assets/brush_un.svg"
+    },
+    "select": {
+      "icon_selected": "assets/select_se.svg",
+      "icon_unselected": "assets/select_un.svg"
+    },
+    "star": {
+      "icon_selected": "assets/star_se.svg",
+      "icon_unselected": "assets/star_un.svg"
+    },
+    "triangle": {
+      "icon_selected": "assets/triangle_se.svg",
+      "icon_unselected": "assets/triangle_un.svg"
+    }
+  },
+  "slider": {
+    "min_value": 4,
+    "max_value": 16,
+    "step": 2
+  }
+}

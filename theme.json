@@ -32,5 +32,21 @@
       "selected_bg": "#98c379",
       "selected_hovered_bg": "#61afef"
     }
+  },
+  "#tool_button": {
+    "colours": {
+      "normal_bg": "#282c34",
+      "hovered_bg": "#282c34",
+      "selected_bg": "#282c34",
+      "disabled_bg": "#252525",
+      "normal_text": "#abb2bf",
+      "hovered_text": "#abb2bf",
+      "selected_text": "#abb2bf"
+    },
+    "misc": {
+        "border_width": "1",
+        "shadow_width": "1",
+        "tool_tip_delay": "1.0"
+    }
   }
 }

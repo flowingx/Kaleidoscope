@@ -77,7 +77,8 @@ class App:
         self._initialize_ui_state()
 
     def _initialize_ui_state(self):
-        self.ui_handler.elements['slice_input'].set_text(str(self.num_slices))
+        self.ui_handler.elements['slice_slider'].set_current_value(self.num_slices)
+        self.ui_handler.elements['slice_value_label'].set_text(str(self.num_slices))
         self.ui_handler.elements['kaleido_btn'].select()
         
         initial_slider_value = 5
@@ -85,6 +86,7 @@ class App:
         self.brush_size = self._calculate_and_update_brush_size(initial_slider_value)
         
         self._update_layer_list_ui()
+        # [FIX] 确保在启动时调用一次，以设置正确的初始图标
         self.ui_handler.update_tool_buttons(self.active_tool)
         self.ui_handler.show_brush_properties()
 
@@ -190,12 +192,12 @@ class App:
     def _handle_gui_events(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             el = event.ui_element
-            # Tool selection
+            # [FIX] Centralize tool selection logic
             if el == self.ui_handler.elements['brush_tool_btn']: self._set_active_tool('brush')
             elif el == self.ui_handler.elements['select_tool_btn']: self._set_active_tool('select')
             elif el == self.ui_handler.elements['triangle_tool_btn']: self._set_active_tool('triangle')
             elif el == self.ui_handler.elements['star_tool_btn']: self._set_active_tool('star')
-            # Actions
+            
             elif el == self.ui_handler.elements['generate_btn']: self._action_generate()
             elif el == self.ui_handler.elements['skip_animation_btn']: self.skip_animation = True
             elif el == self.ui_handler.elements['clear_all_btn']: self._action_clear_all()
@@ -203,31 +205,48 @@ class App:
             elif el == self.ui_handler.elements['delete_shape_btn']: self._action_delete_selected_shape()
             elif el == self.ui_handler.elements['undo_btn']: self.history_manager.undo()
             elif el == self.ui_handler.elements['redo_btn']: self.history_manager.redo()
-            elif el == self.ui_handler.elements['export_btn']: self._action_open_export_dialog()
-            # Toggles
-            elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'; el.select(); self.ui_handler.elements['rotate_btn'].unselect()
-            elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotation Only'; el.select(); self.ui_handler.elements['kaleido_btn'].unselect()
-            elif el == self.ui_handler.elements['global_rotate_toggle']: self.enable_global_rotation = not self.enable_global_rotation; el.select() if self.enable_global_rotation else el.unselect()
-            elif el == self.ui_handler.elements['object_rotate_toggle']: self.enable_object_rotation = not self.enable_object_rotation; el.select() if self.enable_object_rotation else el.unselect()
-            elif el == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing; el.select() if self.enable_pulsing else el.unselect()
-            elif el == self.ui_handler.elements['trail_toggle']: self.enable_trails = not self.enable_trails; el.select() if self.enable_trails else el.unselect()
-
+            elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
+            elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'; self.ui_handler.elements['rotate_btn'].unselect()
+            elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotate'; self.ui_handler.elements['kaleido_btn'].unselect()
+            # [FIX] 添加按钮状态切换逻辑
+            elif el == self.ui_handler.elements['global_rotate_toggle']:
+                self.enable_global_rotation = not self.enable_global_rotation
+                if self.enable_global_rotation: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['object_rotate_toggle']:
+                self.enable_object_rotation = not self.enable_object_rotation
+                if self.enable_object_rotation: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['pulse_toggle']:
+                self.enable_pulsing = not self.enable_pulsing
+                if self.enable_pulsing: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['trail_toggle']:
+                self.enable_trails = not self.enable_trails
+                if self.enable_trails: el.select()
+                else: el.unselect()
+        
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
             el = event.ui_element
             if el == self.ui_handler.elements['brush_size_slider']:
                 self.brush_size = self._calculate_and_update_brush_size(event.value)
+            elif el == self.ui_handler.elements['slice_slider']:
+                # 确保值为偶数
+                value = int(event.value)
+                self.num_slices = value if value % 2 == 0 else value - 1
+                if self.num_slices < 4: self.num_slices = 4 # 确保最小值
+                self.ui_handler.elements['slice_slider'].set_current_value(self.num_slices) # 更新滑块到有效值
+                self.ui_handler.elements['slice_value_label'].set_text(str(self.num_slices))
             elif el == self.ui_handler.elements['guides_slider']:
                 self.guide_line_slices = {0:0, 1:8, 2:12, 3:16}.get(int(event.value),0)
                 self.ui_handler.elements['guides_value_label'].set_text(f"Guides: {self.guide_line_slices if self.guide_line_slices > 0 else 'Off'}")
             elif el == self.ui_handler.elements['shape_size_slider']:
-                self._action_modify_selected_shape({'size': event.value})
+                if self.selected_shape: self._action_modify_selected_shape({'size': event.value})
             elif el == self.ui_handler.elements['shape_rot_slider']:
-                 self._action_modify_selected_shape({'rotation': event.value})
+                 if self.selected_shape: self._action_modify_selected_shape({'rotation': event.value})
 
-        if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_element == self.ui_handler.elements['slice_input']:
-            try: self.num_slices = max(2, min(60, int(event.text)))
-            except ValueError: pass
-            self.ui_handler.elements['slice_input'].set_text(str(self.num_slices))
+        if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
+            pass # 旧的 slice_input 逻辑不再需要
 
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.ui_handler.elements['brush_dropdown']:
             self.brush_type = event.text
@@ -328,14 +347,25 @@ class App:
     
     # --- Tool and Action Methods ---
     def _set_active_tool(self, tool_name):
+        """设置当前激活的工具，并立即更新所有工具按钮的UI状态。"""
+        if self.active_tool == tool_name:
+            return # Avoid redundant updates
+
         self.active_tool = tool_name
-        self.ui_handler.update_tool_buttons(tool_name)
+        
+        # Deselect any vector shape when changing tools
         if self.selected_shape:
-            self.selected_shape.selected = False
             self.selected_shape = None
         
-        if tool_name == 'brush': self.ui_handler.show_brush_properties()
-        else: self.ui_handler.hide_all_tool_properties()
+        # Show/hide relevant property panels
+        if tool_name == 'brush':
+            self.ui_handler.show_brush_properties()
+        elif tool_name in ['select', 'triangle', 'star']:
+            # For shape tools, initially hide props until a shape is selected/created
+            self.ui_handler.hide_all_tool_properties()
+        
+        # [FIX] Immediately update all tool buttons' visual state
+        self.ui_handler.update_tool_buttons(self.active_tool)
 
     # --- Shape Creation ---
     def _start_shape_creation(self, pos):

@@ -4,7 +4,8 @@
 """
 import pygame
 import pygame_gui
-from config import DRAW_AREA_WIDTH, UI_PANEL_WIDTH, LAYER_PANEL_WIDTH, SCREEN_HEIGHT, WHITE
+from config import (DRAW_AREA_WIDTH, UI_PANEL_WIDTH, LAYER_PANEL_WIDTH, 
+                    SCREEN_HEIGHT, WHITE, TOOL_BUTTON_SIZE, ICONS)
 import utils
 
 class UIHandler:
@@ -32,12 +33,24 @@ class UIHandler:
         # --- 工具箱 ---
         self.elements['toolbox_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 100, lh), text="Toolbox", manager=self.manager, container=control_panel)
         y += lh
-        btn_w = 48
-        self.elements['brush_tool_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, btn_w, eh), text='Brush', manager=self.manager, container=control_panel)
-        self.elements['select_tool_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10+btn_w, y, btn_w, eh), text='Select', manager=self.manager, container=control_panel)
-        self.elements['triangle_tool_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10+btn_w*2, y, btn_w, eh), text='Tri', manager=self.manager, container=control_panel)
-        self.elements['star_tool_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10+btn_w*3, y, btn_w, eh), text='Star', manager=self.manager, container=control_panel)
-        y += eh + sp
+        
+        btn_w, btn_h = TOOL_BUTTON_SIZE
+        btn_gap = 5
+        
+        self.elements['brush_tool_btn'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(10, y, btn_w, btn_h), text='', manager=self.manager, 
+            container=control_panel, object_id='#tool_button')
+        self.elements['select_tool_btn'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(10 + btn_w + btn_gap, y, btn_w, btn_h), text='', manager=self.manager, 
+            container=control_panel, object_id='#tool_button')
+        self.elements['triangle_tool_btn'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(10 + (btn_w + btn_gap) * 2, y, btn_w, btn_h), text='', manager=self.manager, 
+            container=control_panel, object_id='#tool_button')
+        self.elements['star_tool_btn'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(10 + (btn_w + btn_gap) * 3, y, btn_w, btn_h), text='', manager=self.manager, 
+            container=control_panel, object_id='#tool_button')
+
+        y += btn_h + sp
         self._create_divider(y - sp/2, control_panel)
 
         panel_height = 135
@@ -72,8 +85,13 @@ class UIHandler:
         self.elements['kaleido_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, y, 95, eh), text='Kaleido', manager=self.manager, container=control_panel)
         self.elements['rotate_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(115, y, 95, eh), text='Rotate', manager=self.manager, container=control_panel)
         y += eh + p
-        self.elements['slice_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 80, eh), text="Slices:", manager=self.manager, container=control_panel)
-        self.elements['slice_input'] = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(90, y, UI_PANEL_WIDTH-120, eh), manager=self.manager, container=control_panel)
+        
+        self.elements['slice_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(10, y, 60, eh), text="Slices:", manager=self.manager, container=control_panel)
+        self.elements['slice_value_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(65, y, 30, eh), text="12", manager=self.manager, container=control_panel, object_id="@value_label")
+        self.elements['slice_slider'] = pygame_gui.elements.UIHorizontalSlider(
+            relative_rect=pygame.Rect(100, y + 5, UI_PANEL_WIDTH - 125, 20),
+            start_value=12, value_range=(4, 16), manager=self.manager, container=control_panel)
+        
         y += eh + sp
         self._create_divider(y - sp/2, control_panel)
         
@@ -123,13 +141,48 @@ class UIHandler:
         self.elements['delete_layer_btn'] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(10, SCREEN_HEIGHT - 55, 160, 30), text='Delete Selected Layer', manager=self.manager, container=layer_panel)
     
     def update_tool_buttons(self, active_tool):
-        """根据当前激活的工具，更新工具栏按钮的选中状态。"""
-        for tool, btn in [('brush', self.elements['brush_tool_btn']), 
-                          ('select', self.elements['select_tool_btn']), 
-                          ('triangle', self.elements['triangle_tool_btn']), 
-                          ('star', self.elements['star_tool_btn'])]:
-            if tool == active_tool: btn.select()
-            else: btn.unselect()
+        """
+        根据当前激活的工具，更新工具栏按钮的图标。
+        此方法现在是控制按钮外观的唯一途径。
+        """
+        tool_map = {
+            'brush': self.elements['brush_tool_btn'],
+            'select': self.elements['select_tool_btn'],
+            'triangle': self.elements['triangle_tool_btn'],
+            'star': self.elements['star_tool_btn']
+        }
+
+        # 从主题中获取按钮的背景色
+        # 我们假设所有状态的背景色都一样
+        try:
+            bg_color = self.manager.ui_theme.get_colour('#tool_button', 'normal_bg')
+        except (ValueError, AttributeError):
+            bg_color = pygame.Color('#282c34') # 如果获取失败，使用一个备用颜色
+
+        for tool_name, button in tool_map.items():
+            is_active = (tool_name == active_tool)
+            icon_key = 'selected' if is_active else 'normal'
+            
+            try:
+                # [FIX] 创建一个与按钮大小相同的独立 Surface 作为画布
+                button_surface = pygame.Surface(TOOL_BUTTON_SIZE, pygame.SRCALPHA)
+                button_surface.fill(bg_color) # 用主题背景色填充画布
+
+                # 加载并缩放我们的图标
+                icon_path = ICONS[tool_name][icon_key]
+                icon_surface = pygame.image.load(icon_path).convert_alpha()
+                scaled_icon = pygame.transform.smoothscale(icon_surface, TOOL_BUTTON_SIZE)
+                
+                # 将图标绘制到我们的画布中央
+                rect = scaled_icon.get_rect(center=(TOOL_BUTTON_SIZE[0] // 2, TOOL_BUTTON_SIZE[1] // 2))
+                button_surface.blit(scaled_icon, rect)
+
+                # 将最终合成的画布设置为按钮的图像
+                button.set_image(button_surface)
+
+            except pygame.error as e:
+                print(f"Error loading icon for {tool_name} at {ICONS[tool_name][icon_key]}: {e}")
+                button.set_text(tool_name[0].upper())
 
     def show_shape_properties(self, shape):
         """显示矢量形状属性面板，并用选中形状的属性更新滑块。"""
