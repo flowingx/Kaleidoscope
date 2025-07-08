@@ -489,7 +489,8 @@ class App:
 
                 for _ in range(num_dots):
                     random_angle = random.uniform(0, 360)
-                    random_dist = random.uniform(0, spray_radius)
+                    sigma = spray_radius / 3.0
+                    random_dist = abs(random.gauss(0, sigma))
                     # 计算随机偏移量
                     offset = pygame.Vector2(random_dist, 0).rotate(random_angle)
                     dot_pos = center_pos + offset
