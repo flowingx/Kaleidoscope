@@ -188,15 +188,33 @@ class App:
             elif el == self.ui_handler.elements['undo_btn']: self.history_manager.undo()
             elif el == self.ui_handler.elements['redo_btn']: self.history_manager.redo()
             elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
-            elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'
-            elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotate'
+
+            # [FIX] Merged logic from reference file. State change and UI update are in one place.
+            elif el == self.ui_handler.elements['kaleido_btn']: 
+                self.symmetry_mode = 'Kaleidoscope'
+                el.select()
+                self.ui_handler.elements['rotate_btn'].unselect()
+            elif el == self.ui_handler.elements['rotate_btn']: 
+                self.symmetry_mode = 'Rotate'
+                el.select()
+                self.ui_handler.elements['kaleido_btn'].unselect()
             
-            # [FIX] Logic is now just toggling the state variable.
-            # The visual update is handled in _update_ui_button_states.
-            elif el == self.ui_handler.elements['global_rotate_toggle']: self.enable_global_rotation = not self.enable_global_rotation
-            elif el == self.ui_handler.elements['object_rotate_toggle']: self.enable_object_rotation = not self.enable_object_rotation
-            elif el == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing
-            elif el == self.ui_handler.elements['trail_toggle']: self.enable_trails = not self.enable_trails
+            elif el == self.ui_handler.elements['global_rotate_toggle']: 
+                self.enable_global_rotation = not self.enable_global_rotation
+                if self.enable_global_rotation: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['object_rotate_toggle']: 
+                self.enable_object_rotation = not self.enable_object_rotation
+                if self.enable_object_rotation: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['pulse_toggle']: 
+                self.enable_pulsing = not self.enable_pulsing
+                if self.enable_pulsing: el.select()
+                else: el.unselect()
+            elif el == self.ui_handler.elements['trail_toggle']: 
+                self.enable_trails = not self.enable_trails
+                if self.enable_trails: el.select()
+                else: el.unselect()
         
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
             el = event.ui_element
@@ -226,37 +244,11 @@ class App:
         if event.type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED and event.ui_element == self.export_window:
             self._action_start_export()
     
-    def _update_ui_button_states(self):
-        """[FIX] Force UI buttons to reflect the application's state every frame."""
-        if self.symmetry_mode == 'Kaleidoscope':
-            self.ui_handler.elements['kaleido_btn'].select()
-            self.ui_handler.elements['rotate_btn'].unselect()
-        else:
-            self.ui_handler.elements['kaleido_btn'].unselect()
-            self.ui_handler.elements['rotate_btn'].select()
-
-        toggles = {
-            self.enable_global_rotation: self.ui_handler.elements['global_rotate_toggle'],
-            self.enable_object_rotation: self.ui_handler.elements['object_rotate_toggle'],
-            self.enable_pulsing: self.ui_handler.elements['pulse_toggle'],
-            self.enable_trails: self.ui_handler.elements['trail_toggle'],
-        }
-        for is_enabled, button in toggles.items():
-            if is_enabled:
-                if not button.is_selected:
-                    button.select()
-            else:
-                if button.is_selected:
-                    button.unselect()
-
-        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
-        else: self.ui_handler.elements['undo_btn'].hide()
-        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
-        else: self.ui_handler.elements['redo_btn'].hide()
-
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)
-        self._update_ui_button_states() # [FIX] Add this call
+        
+        # [FIX] This separate update function is no longer needed, logic is in the event handler.
+        # self._update_ui_button_states() 
         
         self.ui_handler.update_tool_buttons(self.active_tool)
 
@@ -264,6 +256,11 @@ class App:
         if self.enable_object_rotation: self.object_rotation_angle = (self.object_rotation_angle + 1.0) % 360
         if self.enable_pulsing: self.pulsing_scale = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
         else: self.pulsing_scale = 1.0
+        
+        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
+        else: self.ui_handler.elements['undo_btn'].hide()
+        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
+        else: self.ui_handler.elements['redo_btn'].hide()
         
         self.export_manager.update()
         self.export_manager.update_timer(time_delta_seconds * 1000)
