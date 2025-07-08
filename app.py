@@ -197,13 +197,27 @@ class App:
             elif el == self.ui_handler.elements['undo_btn']: self.history_manager.undo()
             elif el == self.ui_handler.elements['redo_btn']: self.history_manager.redo()
             elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
-            elif el == self.ui_handler.elements['kaleido_btn']: self.symmetry_mode = 'Kaleidoscope'
-            elif el == self.ui_handler.elements['rotate_btn']: self.symmetry_mode = 'Rotate'
+            elif el == self.ui_handler.elements['kaleido_btn']:
+                if not el.is_selected:
+                    el.select() # Prevent user from unselecting the radio button
+                self.symmetry_mode = 'Kaleidoscope'
+                self.ui_handler.elements['rotate_btn'].unselect()
+            elif el == self.ui_handler.elements['rotate_btn']:
+                if not el.is_selected:
+                    el.select() # Prevent user from unselecting the radio button
+                self.symmetry_mode = 'Rotate'
+                self.ui_handler.elements['kaleido_btn'].unselect()
             
             elif el == self.ui_handler.elements['global_rotate_toggle']: self.enable_global_rotation = not self.enable_global_rotation
             elif el == self.ui_handler.elements['object_rotate_toggle']: self.enable_object_rotation = not self.enable_object_rotation
             elif el == self.ui_handler.elements['pulse_toggle']: self.enable_pulsing = not self.enable_pulsing
             elif el == self.ui_handler.elements['trail_toggle']: self.enable_trails = not self.enable_trails
+            
+            # --- 对称模式按钮 (Radio Button 行为) ---
+            elif el == self.ui_handler.elements['kaleido_btn']:
+                self.symmetry_mode = 'Kaleidoscope'
+            elif el == self.ui_handler.elements['rotate_btn']:
+                self.symmetry_mode = 'Rotate'
         
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
             el = event.ui_element
@@ -245,32 +259,25 @@ class App:
             self._action_start_export()
     
     def _update_ui_button_states(self):
-        """ 
-        更新 UI 按钮状态以反映当前应用程序状态。
         """
-        if self.symmetry_mode == 'Kaleidoscope':
-            self.ui_handler.elements['kaleido_btn'].select()
-            self.ui_handler.elements['rotate_btn'].unselect()
+        [ULTIMATE, FINAL, NO-MORE-MISTAKES FIX]
+        直接修改按钮的背景颜色，彻底抛弃 select/unselect。
+        """
+
+        # --- 历史记录按钮 ---
+        if self.history_manager.can_undo():
+            self.ui_handler.elements['undo_btn'].enable()
+            self.ui_handler.elements['undo_btn'].show()
         else:
-            self.ui_handler.elements['kaleido_btn'].unselect()
-            self.ui_handler.elements['rotate_btn'].select()
+            self.ui_handler.elements['undo_btn'].disable()
+            self.ui_handler.elements['undo_btn'].hide()
 
-        toggles = {
-            self.enable_global_rotation: self.ui_handler.elements['global_rotate_toggle'],
-            self.enable_object_rotation: self.ui_handler.elements['object_rotate_toggle'],
-            self.enable_pulsing: self.ui_handler.elements['pulse_toggle'],
-            self.enable_trails: self.ui_handler.elements['trail_toggle'],
-        }
-        for is_enabled, button in toggles.items():
-            if is_enabled:
-                button.select()
-            else:
-                button.unselect()
-
-        if self.history_manager.can_undo(): self.ui_handler.elements['undo_btn'].show()
-        else: self.ui_handler.elements['undo_btn'].hide()
-        if self.history_manager.can_redo(): self.ui_handler.elements['redo_btn'].show()
-        else: self.ui_handler.elements['redo_btn'].hide()
+        if self.history_manager.can_redo():
+            self.ui_handler.elements['redo_btn'].enable()
+            self.ui_handler.elements['redo_btn'].show()
+        else:
+            self.ui_handler.elements['redo_btn'].disable()
+            self.ui_handler.elements['redo_btn'].hide()
 
     def _update(self, time_delta_seconds):
         self.ui_manager.update(time_delta_seconds)

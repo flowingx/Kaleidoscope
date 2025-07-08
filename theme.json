@@ -27,10 +27,15 @@
   },
   "#dynamic_toggle_button": {
     "colours": {
-      "normal_bg": "#e06c75",
-      "hovered_bg": "#c678dd",
-      "selected_bg": "#98c379",
-      "selected_hovered_bg": "#61afef"
+      "normal_bg": "#323232",
+      "hover_bg": "#404040",
+      "disabled_bg": "#282828",
+      "selected_bg": "#0078D7",
+      "active_bg": "#005a9e",
+      "normal_text": "#ffffff",
+      "hover_text": "#ffffff",
+      "selected_text": "#ffffff",
+      "disabled_text": "#6c6c6c"
     }
   },
   "#tool_button": {
@@ -44,9 +49,9 @@
       "selected_text": "#abb2bf"
     },
     "misc": {
-        "border_width": "1",
-        "shadow_width": "1",
-        "tool_tip_delay": "1.0"
+      "border_width": "1",
+      "shadow_width": "1",
+      "tool_tip_delay": "1.0"
     }
   }
 }
