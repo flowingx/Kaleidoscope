@@ -371,12 +371,25 @@ class App:
             pass
 
     def _set_active_tool(self, tool_name):
-        if self.active_tool == tool_name: return
+        if self.active_tool == tool_name:
+        # 如果重复点击笔刷工具，也应该确保UI状态正确
+            if tool_name == 'brush':
+                self.ui_handler.show_brush_properties()
+                self.ui_handler.update_brush_options_visibility(self.brush_type)
+            return
+
         self.active_tool = tool_name
-        if self.selected_shape: self.selected_shape = None
-        if tool_name == 'brush': self.ui_handler.show_brush_properties()
-        else: self.ui_handler.hide_all_tool_properties()
-        
+        if self.selected_shape:
+            self.selected_shape = None
+
+        if tool_name == 'brush':
+            # 当从其他工具切换到笔刷时
+            self.ui_handler.show_brush_properties()
+            self.ui_handler.update_brush_options_visibility(self.brush_type)
+        else:
+            # 当切换到任何非笔刷工具时
+            self.ui_handler.hide_all_tool_properties()
+
         self.ui_handler.update_tool_buttons(self.active_tool)
 
     def _start_shape_creation(self, pos):
