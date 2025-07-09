@@ -33,11 +33,11 @@ class App:
         self.brush_size = 1.0
         self.user_path, self.is_drawing = [], False
         
-        self.brush_spacing = 100.0  # (计划 2) Circle笔刷的间距，百分比
-        self.brush_color_jitter = 0.0 # (计划 3) 颜色抖动, 0.0 to 1.0
-        self.brush_flow = 30.0        # (计划 4) Spray笔刷的流量（每秒喷洒次数）
-        self.brush_size_jitter = 1.0  # (计划 5) Spray笔刷的粒子大小变化（像素）
-        self.spray_timer = 0.0        # (计划 4) 用于流量控制的计时器
+        self.brush_spacing = 100.0    # Circle笔刷的间距，百分比
+        self.brush_color_jitter = 0.0 # 颜色抖动, 0.0 to 1.0
+        self.brush_flow = 30.0        # Spray笔刷的流量（每秒喷洒次数）
+        self.brush_size_jitter = 1.0  # Spray笔刷的粒子大小变化（像素）
+        self.spray_timer = 0.0        # 用于流量控制的计时器
 
         
         # 矢量形状相关状态
@@ -199,12 +199,12 @@ class App:
             elif el == self.ui_handler.elements['export_btn']: self._action_open_export_window()
             elif el == self.ui_handler.elements['kaleido_btn']:
                 if not el.is_selected:
-                    el.select() # Prevent user from unselecting the radio button
+                    el.select() # 防止用户取消选择单选按钮
                 self.symmetry_mode = 'Kaleidoscope'
                 self.ui_handler.elements['rotate_btn'].unselect()
             elif el == self.ui_handler.elements['rotate_btn']:
                 if not el.is_selected:
-                    el.select() # Prevent user from unselecting the radio button
+                    el.select()
                 self.symmetry_mode = 'Rotate'
                 self.ui_handler.elements['kaleido_btn'].unselect()
             
@@ -260,8 +260,7 @@ class App:
     
     def _update_ui_button_states(self):
         """
-        [ULTIMATE, FINAL, NO-MORE-MISTAKES FIX]
-        直接修改按钮的背景颜色，彻底抛弃 select/unselect。
+        直接修改按钮的背景颜色，不再使用 select/unselect来控制按钮状态。
         """
 
         # --- 历史记录按钮 ---
@@ -350,7 +349,7 @@ class App:
         pygame.display.flip()
     
     def _draw_layer_highlight(self):
-        """Draws a visible border around the currently active layer in the UI list."""
+        """在UI列表中为当前活动的图层绘制一个可见的边框。"""
         try:
             layer_list = self.ui_handler.elements['layer_list']
             if not layer_list.item_list: return
@@ -488,7 +487,7 @@ class App:
         elements_to_draw = []
         path_len = len(self.user_path)
 
-        # [FIX] 将 path_length_pixels 的计算提到所有 if/elif 之前
+        # 将 path_length_pixels 的计算提到所有 if/elif 之前
         # 这样 'Line' 和 'Circle' 笔刷都可以安全地使用它。
         path_length_pixels = 0
         if path_len >= 2:

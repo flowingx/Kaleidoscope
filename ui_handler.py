@@ -83,8 +83,8 @@ class UIHandler:
         # --- Spray 笔刷选项容器 ---
         self.elements['spray_options_panel'] = pygame_gui.elements.UIPanel(relative_rect=options_panel_rect, manager=self.manager, container=self.elements['brush_panel'], starting_layer_height=2)
         so_y = 5 # Spray Options Y
-        label_width = 100  # [FIX] 增加标签宽度
-        slider_x_pos = label_width + 5 # [FIX] 调整滑块的起始 X 坐标
+        label_width = 100
+        slider_x_pos = label_width + 5
 
         self.elements['brush_flow_label'] = pygame_gui.elements.UILabel(relative_rect=pygame.Rect(5, so_y, label_width, lh), text="Flow:", manager=self.manager, container=self.elements['spray_options_panel'])
         self.elements['brush_flow_slider'] = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect(slider_x_pos, so_y+2, UI_PANEL_WIDTH-slider_x_pos-30, 20), start_value=30, value_range=(5, 100), manager=self.manager, container=self.elements['spray_options_panel'])
@@ -208,7 +208,7 @@ class UIHandler:
             icon_key = 'selected' if is_active else 'normal'
             
             try:
-                # [FIX] 创建一个与按钮大小相同的独立 Surface 作为画布
+                # 创建一个与按钮大小相同的独立 Surface 作为画布
                 button_surface = pygame.Surface(TOOL_BUTTON_SIZE, pygame.SRCALPHA)
                 button_surface.fill(bg_color) # 用主题背景色填充画布
 
