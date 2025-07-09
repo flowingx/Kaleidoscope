@@ -10,6 +10,7 @@ An interactive kaleidoscope drawing application built with Python and Pygame. It
 
 **[Application Screenshot or GIF]**
 ![Kaleidoscope Demo](./demokaleido_art_134947.png)
+![Kaleidoscope Demo](./kaleido_art_084822.gif)
 
 ---
 
