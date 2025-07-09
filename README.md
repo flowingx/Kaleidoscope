@@ -8,9 +8,8 @@
 
 ---
 
-**[程序运行截图或 GIF 动图]**
-![输入图片说明](demokaleido_art_134947.png)
-
+![PNG](demokaleido_art_134947.png)
+![GIF](kaleido_art_084822.gif)
 ---
 
 ## 功能列表
