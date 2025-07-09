@@ -51,7 +51,7 @@ An interactive kaleidoscope drawing application built with Python and Pygame. It
 
 - **Comprehensive History**:
 
-  - Supports unlimited `Undo` and `Redo` for almost all actions, including drawing, shape manipulation, and layer operations.
+  - Supports `Undo` and `Redo` for almost all actions, including drawing, shape manipulation, and layer operations.
 
 - **Export Functionality**:
   - Export the static canvas as a high-resolution **PNG** image.
