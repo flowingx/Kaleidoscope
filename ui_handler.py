@@ -68,7 +68,7 @@ class UIHandler:
 
         b_y += 20 + sp # 为下面的选项面板留出空间
 
-        # [NEW] 创建共享空间的容器面板
+        # 创建共享空间的容器面板
         options_panel_rect = pygame.Rect(0, b_y, UI_PANEL_WIDTH-25, 80)
 
         # --- Circle 笔刷选项容器 ---
