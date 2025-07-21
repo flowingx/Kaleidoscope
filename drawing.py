@@ -4,7 +4,6 @@
 """
 import pygame
 import math
-import random
 from config import CENTER_X, CENTER_Y, DRAW_AREA_WIDTH, GUIDE_LINE_COLOR
 
 def draw_dashed_line(surface, color, start_pos, end_pos, dash_length=10, gap_length=5):
@@ -58,7 +57,6 @@ def draw_on_surface(surface, elements, num_slices, symmetry_mode):
                         rotated_pos.y = -rotated_pos.y
                     draw_pos = (int(rotated_pos.x + CENTER_X), int(rotated_pos.y + CENTER_Y))
                     pygame.draw.circle(surface, element['color'], draw_pos, int(element['size']))
-
 
 def get_composite_image(layers, num_slices, symmetry_mode, object_rotation_angle):
     """

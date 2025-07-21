@@ -1,8 +1,6 @@
-# utils.py
 """
 包含通用的辅助函数，如颜色插值和图像创建。
 """
-
 import pygame
 
 def lerp_color(c1, c2, t):
