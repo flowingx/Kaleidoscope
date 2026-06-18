@@ -3,7 +3,7 @@
 负责初始化环境、创建应用程序实例并启动主循环。
 """
 import os
-from app import App
+from modern_app import ModernApp
 from config import EXPORTS_DIR
 
 if __name__ == '__main__':
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     if not os.path.exists(EXPORTS_DIR):
         os.makedirs(EXPORTS_DIR)
         
-    # 创建 App 类的实例
-    app = App()
+    # 创建应用实例
+    app = ModernApp()
     # 启动应用程序的主循环
     app.run()

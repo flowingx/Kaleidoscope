@@ -114,6 +114,12 @@ class ExportManager:
             self.trail_frames_for_gif.append((trail_copy, alpha))
         
         frame_surface = drawing.apply_global_dynamics(composite_image, current_global_angle, current_pulsing_scale, self.trail_frames_for_gif)
+        background_color = self.dynamics_params.get('background_color')
+        if background_color is not None:
+            background_surface = pygame.Surface(frame_surface.get_size())
+            background_surface.fill(background_color)
+            background_surface.blit(frame_surface, (0, 0))
+            frame_surface = background_surface
         
         frame_data = pygame.surfarray.array3d(frame_surface)
         frame_data = np.transpose(frame_data, (1, 0, 2))

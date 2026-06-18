@@ -23,7 +23,7 @@ def draw_dashed_line(surface, color, start_pos, end_pos, dash_length=10, gap_len
         current_pos += direction * (dash_length + gap_length)
         current_distance += dash_length + gap_length
 
-def draw_guide_lines(surface, num_slices):
+def draw_guide_lines(surface, num_slices, color=GUIDE_LINE_COLOR):
     """根据切片数绘制万花筒的辅助参考线。"""
     if num_slices <= 0: return
     slice_angle_rad = 2 * math.pi / num_slices
@@ -31,7 +31,7 @@ def draw_guide_lines(surface, num_slices):
         angle = i * slice_angle_rad
         end_x = CENTER_X + DRAW_AREA_WIDTH * math.cos(angle)
         end_y = CENTER_Y + DRAW_AREA_WIDTH * math.sin(angle)
-        draw_dashed_line(surface, GUIDE_LINE_COLOR, (CENTER_X, CENTER_Y), (end_x, end_y))
+        draw_dashed_line(surface, color, (CENTER_X, CENTER_Y), (end_x, end_y))
 
 def draw_on_surface(surface, elements, num_slices, symmetry_mode):
     """

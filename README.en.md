@@ -4,7 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Pygame](https://img.shields.io/badge/made%20with-Pygame-red)
 
-An interactive kaleidoscope drawing application built with Python and Pygame. It combines pixel brushes, vector graphics, layer management, and dynamic effects, allowing users to easily create complex, symmetrical works of art.
+An interactive kaleidoscope drawing application built with Python and Pygame. The current version has been rebuilt with a modern self-drawn interface while keeping pixel brushes, vector graphics, layer management, dynamic effects, and export support.
 
 ---
 
@@ -35,7 +35,13 @@ An interactive kaleidoscope drawing application built with Python and Pygame. It
 
   - **Slice Count**: Freely adjust the number of symmetry axes with a real-time preview.
   - **Symmetry Modes**: Offers two core modes: `Kaleidoscope` (rotation + mirror) and standard `Rotate` only.
-  - **Guide Lines**: Optional guide lines can be enabled to aid composition.
+  - **Guide Lines**: Optional guide lines follow the current slice count and automatically use a high-contrast complementary color based on the canvas background.
+
+- **Modern Interface & Color Control**:
+
+  - Uses a lightweight self-drawn Pygame UI, with `modern_app.py` as the new app shell.
+  - The color panel provides `A`, `B`, and `BG` chips for the gradient start color, gradient end color, and canvas background.
+  - PNG/GIF exports preserve the current canvas background color.
 
 - **Full Layer Management**:
 
@@ -76,7 +82,7 @@ This project was developed with the assistance of AI.
 Clone this repository to your local machine:
 
 ```bash
-git clone https://gitee.com/flowingr/kaleidoscope.git
+git clone https://github.com/flowingx/Kaleidoscope.git
 ```
 
 Navigate into the project directory and install the required dependencies:
@@ -94,12 +100,38 @@ _(If the `pip` command points to a different environment, it is recommended to u
 python main.py
 ```
 
+### 4. Conda Test Environment
+
+A dedicated environment is recommended for testing:
+
+```bash
+conda create -n kaleidoscope-test python=3.8 -y
+conda activate kaleidoscope-test
+python -m pip install -r requirements.txt
+python main.py
+```
+
+### 5. Build a Local exe
+
+On Windows, build a single-file executable with PyInstaller:
+
+```bash
+conda activate kaleidoscope-test
+python -m PyInstaller --onefile --windowed --name Kaleidoscope main.py
+```
+
+The executable will be generated at:
+
+```text
+dist/Kaleidoscope.exe
+```
+
 ## How to Use
 
 The application interface is divided into three main areas:
 
 - **Left - Drawing Area**: Your main canvas. Use the selected tool from the toolbox to create your art here.
-- **Middle - Control Panel**: Contains the toolbox, settings for the current tool, symmetry controls, dynamic effects, and export options.
+- **Middle - Control Panel**: Contains the toolbox, current tool settings, symmetry controls, color controls, dynamic effects, and export options.
 - **Right - Layer Panel**: Used to manage all your drawing layers.
 
 ## Contributing

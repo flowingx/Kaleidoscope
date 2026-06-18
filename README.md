@@ -4,7 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Pygame](https://img.shields.io/badge/made%20with-Pygame-red)
 
-这是一个使用 Python 和 Pygame 构建的交互式万花筒绘图应用。它结合了像素笔刷、矢量图形、图层管理和动态效果，允许用户轻松创作复杂、对称的艺术作品。
+这是一个使用 Python 和 Pygame 构建的交互式万花筒绘图应用。当前版本已经重构为自绘的现代化界面，并保留像素笔刷、矢量图形、图层管理、动态效果和导出能力，允许用户轻松创作复杂、对称的艺术作品。
 
 ---
 
@@ -35,7 +35,13 @@
 
   - **分片数量**: 自由调整对称轴的数量，实时预览效果。
   - **对称模式**: 提供 `万花筒` (旋转+镜像) 和 `仅旋转` 两种核心对称模式。
-  - **辅助线**: 可开启辅助参考线，帮助构图。
+  - **辅助线**: 可开启辅助参考线，辅助线瓣数会跟随当前分片数量，并根据背景色自动切换为高反差互补色。
+
+- **现代化界面与颜色控制**:
+
+  - 使用轻量的自绘 Pygame UI，入口为 `modern_app.py`。
+  - 颜色区提供 `A`、`B` 和 `BG` 三个色块，分别控制渐变起点、渐变终点和画布背景色。
+  - PNG/GIF 导出会保留当前画布背景色。
 
 - **完整的图层管理**:
 
@@ -76,7 +82,7 @@
 克隆本仓库到本地：
 
 ```bash
-git clone https://gitee.com/flowingr/kaleidoscope.git
+git clone https://github.com/flowingx/Kaleidoscope.git
 ```
 
 进入项目目录，并安装依赖项：
@@ -94,12 +100,38 @@ pip install -r requirements.txt
 python main.py
 ```
 
+### 4. Conda 测试环境
+
+推荐为本项目创建独立测试环境：
+
+```bash
+conda create -n kaleidoscope-test python=3.8 -y
+conda activate kaleidoscope-test
+python -m pip install -r requirements.txt
+python main.py
+```
+
+### 5. 本地构建 exe
+
+在 Windows 上可使用 PyInstaller 构建单文件可执行程序：
+
+```bash
+conda activate kaleidoscope-test
+python -m PyInstaller --onefile --windowed --name Kaleidoscope main.py
+```
+
+构建完成后，可执行文件位于：
+
+```text
+dist/Kaleidoscope.exe
+```
+
 ## 使用说明
 
 程序界面分为三个区域：
 
 - **左侧 - 绘图区**: 您的主画布，使用从工具箱中选择的工具在此处进行创作。
-- **中间 - 控制面板**: 包含工具箱、当前工具的设置、对称性控制、动态效果和导出选项。
+- **中间 - 控制面板**: 包含工具箱、当前工具设置、对称性控制、颜色控制、动态效果和导出选项。
 - **右侧 - 图层面板**: 用于管理您的所有绘图图层。
 
 ## 参与贡献
