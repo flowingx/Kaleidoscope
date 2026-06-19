@@ -27,9 +27,10 @@ An interactive kaleidoscope drawing application built with Python and Pygame. Th
 
 - **Vector Shape Tools**:
 
-  - **Create & Edit**: Directly draw vector shapes like `Triangles` and `Stars` on the canvas.
-  - **Select & Transform**: Use the selection tool to easily `select`, `move`, `resize`, and `rotate` individual vector shapes.
-  - **Properties Panel**: Precisely adjust the size and rotation of a selected shape in its dedicated panel.
+  - **Shape Library**: Directly draw vector shapes such as `Triangle`, `Star`, `Square`, `Diamond`, `Hexagon`, and `Heart`.
+  - **Point & Lasso Selection**: The selection tool offers `Point` and `Lasso` modes. Edit one shape precisely, or lasso multiple shapes to move, scale, and delete them together.
+  - **Repeat / Free**: Each shape can participate in the kaleidoscope mapping or stay as a one-off free object. `Free` shapes work like stickers or note annotations.
+  - **Properties Panel**: Adjust size, rotation, and repeat mode for selected shapes.
 
 - **Powerful Symmetry Engine**:
 
@@ -133,6 +134,10 @@ The application interface is divided into three main areas:
 - **Left - Drawing Area**: Your main canvas. Use the selected tool from the toolbox to create your art here.
 - **Middle - Control Panel**: Contains the toolbox, current tool settings, symmetry controls, color controls, dynamic effects, and export options.
 - **Right - Layer Panel**: Used to manage all your drawing layers.
+
+In the selection tool, `Point` targets one shape and `Lasso` selects a group. In Shape Library, `Repeat` sends the shape through the kaleidoscope mapping, while `Free` places it once like a sticker in a note app.
+
+For the next-stage idea of treating the kaleidoscope as a changing viewing lens, see [docs/vision.md](docs/vision.md).
 
 ## Contributing
 

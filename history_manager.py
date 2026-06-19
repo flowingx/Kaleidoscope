@@ -41,6 +41,22 @@ class DeleteShapeAction(Action):
     def execute(self): self.layer.shapes.remove(self.shape)
     def undo(self): self.layer.shapes.append(self.shape)
 
+class DeleteShapesAction(Action):
+    """记录“删除多个矢量形状”的动作。"""
+    def __init__(self, layer, shapes):
+        self.layer = layer
+        self.shapes = list(shapes)
+        self.indexes = []
+    def execute(self):
+        self.indexes = []
+        for shape in self.shapes:
+            if shape in self.layer.shapes:
+                self.indexes.append((shape, self.layer.shapes.index(shape)))
+                self.layer.shapes.remove(shape)
+    def undo(self):
+        for shape, index in sorted(self.indexes, key=lambda item: item[1]):
+            self.layer.shapes.insert(index, shape)
+
 class ModifyShapeAction(Action):
     """记录对矢量形状属性（如位置、大小、旋转）的修改。"""
     def __init__(self, shape, old_attrs, new_attrs):
@@ -51,6 +67,17 @@ class ModifyShapeAction(Action):
         for attr, value in self.new_attrs.items(): setattr(self.shape, attr, value)
     def undo(self):
         for attr, value in self.old_attrs.items(): setattr(self.shape, attr, value)
+
+class ModifyShapesAction(Action):
+    """记录多个矢量形状的一次属性修改。"""
+    def __init__(self, shape_changes):
+        self.shape_changes = list(shape_changes)
+    def execute(self):
+        for shape, _old_attrs, new_attrs in self.shape_changes:
+            for attr, value in new_attrs.items(): setattr(shape, attr, value)
+    def undo(self):
+        for shape, old_attrs, _new_attrs in self.shape_changes:
+            for attr, value in old_attrs.items(): setattr(shape, attr, value)
 
 class HistoryManager:
     """

@@ -11,7 +11,7 @@ class Shape:
     定义了形状的通用属性，如位置、大小、颜色和旋转，以及通用方法。
     """
     _next_id = 1
-    def __init__(self, pos, size, fill_color, rotation=0.0, stroke_width=0, stroke_color=(0,0,0)):
+    def __init__(self, pos, size, fill_color, rotation=0.0, stroke_width=0, stroke_color=(0,0,0), repeat_enabled=True):
         self.id = Shape._next_id; Shape._next_id += 1
         self.pos = pygame.Vector2(pos)
         self.size = float(size)
@@ -19,6 +19,7 @@ class Shape:
         self.stroke_color = stroke_color
         self.stroke_width = int(stroke_width)
         self.rotation = float(rotation)
+        self.repeat_enabled = repeat_enabled
         self.selected = False
 
     def get_points(self):
@@ -96,3 +97,37 @@ class Star(Shape):
             vec = pygame.Vector2(radius, 0).rotate(angle)
             local_points.append(vec)
         return local_points
+
+class PolygonShape(Shape):
+    """规则多边形。"""
+    def __init__(self, pos, size, fill_color, sides=4, **kwargs):
+        super().__init__(pos, size, fill_color, **kwargs)
+        self.sides = max(3, int(sides))
+
+    def get_points(self):
+        radius = self.size / 2
+        angle_step = 360 / self.sides
+        return [pygame.Vector2(radius, 0).rotate(i * angle_step - 90) for i in range(self.sides)]
+
+class Diamond(Shape):
+    """菱形。"""
+    def get_points(self):
+        s = self.size / 2
+        return [
+            pygame.Vector2(0, -s),
+            pygame.Vector2(s * 0.72, 0),
+            pygame.Vector2(0, s),
+            pygame.Vector2(-s * 0.72, 0),
+        ]
+
+class Heart(Shape):
+    """近似心形，用多边形点列绘制。"""
+    def get_points(self):
+        scale = self.size / 34
+        points = []
+        for i in range(36):
+            t = 2 * math.pi * i / 36
+            x = 16 * math.sin(t) ** 3
+            y = -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
+            points.append(pygame.Vector2(x * scale, y * scale))
+        return points

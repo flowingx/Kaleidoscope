@@ -75,8 +75,9 @@ def get_composite_image(layers, num_slices, symmetry_mode, object_rotation_angle
         slice_angle_deg = 360 / num_slices
         for shape in layer.shapes:
             current_shape_rotation = shape.rotation + object_rotation_angle
+            repeat_count = num_slices if getattr(shape, 'repeat_enabled', True) else 1
             
-            for i in range(num_slices):
+            for i in range(repeat_count):
                 slice_rotation_angle = i * slice_angle_deg
                 
                 pos_relative_to_center = shape.pos - center_vector
