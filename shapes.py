@@ -120,6 +120,40 @@ class Diamond(Shape):
             pygame.Vector2(-s * 0.72, 0),
         ]
 
+class Arrow(Shape):
+    """向右箭头。"""
+    def get_points(self):
+        s = self.size / 2
+        return [
+            pygame.Vector2(-s, -s * 0.34),
+            pygame.Vector2(s * 0.18, -s * 0.34),
+            pygame.Vector2(s * 0.18, -s * 0.68),
+            pygame.Vector2(s, 0),
+            pygame.Vector2(s * 0.18, s * 0.68),
+            pygame.Vector2(s * 0.18, s * 0.34),
+            pygame.Vector2(-s, s * 0.34),
+        ]
+
+class Cross(Shape):
+    """加号/十字形。"""
+    def get_points(self):
+        s = self.size / 2
+        arm = s * 0.34
+        return [
+            pygame.Vector2(-arm, -s),
+            pygame.Vector2(arm, -s),
+            pygame.Vector2(arm, -arm),
+            pygame.Vector2(s, -arm),
+            pygame.Vector2(s, arm),
+            pygame.Vector2(arm, arm),
+            pygame.Vector2(arm, s),
+            pygame.Vector2(-arm, s),
+            pygame.Vector2(-arm, arm),
+            pygame.Vector2(-s, arm),
+            pygame.Vector2(-s, -arm),
+            pygame.Vector2(-arm, -arm),
+        ]
+
 class Heart(Shape):
     """近似心形，用多边形点列绘制。"""
     def get_points(self):

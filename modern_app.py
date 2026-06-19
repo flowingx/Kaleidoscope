@@ -31,7 +31,7 @@ from history_manager import (
     ModifyShapesAction,
 )
 from layer import Layer
-from shapes import Diamond, Heart, PolygonShape, Star, Triangle
+from shapes import Arrow, Cross, Diamond, Heart, PolygonShape, Star, Triangle
 
 
 @dataclass
@@ -150,6 +150,43 @@ class ModernApp:
         self.enable_trails = False
         self.trail_frames = deque(maxlen=15)
         self.guides_enabled = False
+        self.lens_presets = {
+            "calm": {
+                "label": "Calm",
+                "slices": 8,
+                "symmetry_mode": "Rotate",
+                "global_angle": 0.0,
+                "object_angle": 0.0,
+                "global_rotation": False,
+                "object_rotation": False,
+                "pulsing": False,
+                "trails": False,
+            },
+            "bloom": {
+                "label": "Bloom",
+                "slices": 12,
+                "symmetry_mode": "Kaleidoscope",
+                "global_angle": 18.0,
+                "object_angle": 0.0,
+                "global_rotation": False,
+                "object_rotation": False,
+                "pulsing": True,
+                "trails": False,
+            },
+            "prism": {
+                "label": "Prism",
+                "slices": 16,
+                "symmetry_mode": "Kaleidoscope",
+                "global_angle": 42.0,
+                "object_angle": 36.0,
+                "global_rotation": True,
+                "object_rotation": True,
+                "pulsing": True,
+                "trails": True,
+            },
+        }
+        self.active_lens_preset = None
+        self.lens_transition = None
 
         self.layers = [Layer()]
         self.active_layer_index = 0
@@ -259,27 +296,37 @@ class ModernApp:
         shape_buttons = [
             ("triangle", "Tri"),
             ("star", "Star"),
+            ("circle", "Circle"),
             ("square", "Square"),
             ("diamond", "Dia"),
             ("hexagon", "Hex"),
+            ("arrow", "Arrow"),
+            ("cross", "Cross"),
             ("heart", "Heart"),
         ]
         for i, (key, label) in enumerate(shape_buttons):
-            rect = pygame.Rect(x + (i % 3) * 64, 196 + (i // 3) * 36, 58, 30)
+            rect = pygame.Rect(x + (i % 3) * 64, 166 + (i // 3) * 36, 58, 30)
             self.buttons[f"shape_lib:{key}"] = Button(f"shape_lib:{key}", rect, label, "segment")
-        self.buttons["shape_repeat"] = Button("shape_repeat", pygame.Rect(x, 270, 92, 30), "Repeat", "segment")
-        self.buttons["shape_free"] = Button("shape_free", pygame.Rect(x + 98, 270, 92, 30), "Free", "segment")
+        self.buttons["shape_repeat"] = Button("shape_repeat", pygame.Rect(x, 276, 92, 30), "Repeat", "segment")
+        self.buttons["shape_free"] = Button("shape_free", pygame.Rect(x + 98, 276, 92, 30), "Free", "segment")
         self.buttons["selected_repeat"] = Button("selected_repeat", pygame.Rect(x, 306, 92, 30), "Repeat", "segment")
         self.buttons["selected_free"] = Button("selected_free", pygame.Rect(x + 98, 306, 92, 30), "Free", "segment")
         self.buttons["delete_shape"] = Button("delete_shape", pygame.Rect(x, 338, 190, 32), "Delete shape")
 
+        for i, (key, preset) in enumerate(self.lens_presets.items()):
+            self.buttons[f"lens:{key}"] = Button(
+                f"lens:{key}",
+                pygame.Rect(x + i * 64, 378, 58, 30),
+                preset["label"],
+                "segment",
+            )
         self.buttons["symmetry:Kaleidoscope"] = Button(
-            "symmetry:Kaleidoscope", pygame.Rect(x, 378, 92, 30), "Mirror", "segment"
+            "symmetry:Kaleidoscope", pygame.Rect(x, 414, 92, 30), "Mirror", "segment"
         )
         self.buttons["symmetry:Rotate"] = Button(
-            "symmetry:Rotate", pygame.Rect(x + 98, 378, 92, 30), "Rotate", "segment"
+            "symmetry:Rotate", pygame.Rect(x + 98, 414, 92, 30), "Rotate", "segment"
         )
-        self.sliders["slices"] = Slider("slices", pygame.Rect(x, 446, 190, 8), "Slices", 4, 16, self.num_slices)
+        self.sliders["slices"] = Slider("slices", pygame.Rect(x, 466, 190, 8), "Slices", 4, 16, self.num_slices)
 
         self.color_rect_start = pygame.Rect(x, 506, 58, 34)
         self.color_rect_end = pygame.Rect(x + 66, 506, 58, 34)
@@ -526,6 +573,8 @@ class ModernApp:
             self.selection_mode = key.split(":", 1)[1]
         elif key.startswith("shape_lib:"):
             self.selected_shape_key = key.split(":", 1)[1]
+        elif key.startswith("lens:"):
+            self._start_lens_transition(key.split(":", 1)[1])
         elif key == "shape_repeat":
             self.next_shape_repeat_enabled = True
             self._set_repeat_for_selection(True)
@@ -538,6 +587,8 @@ class ModernApp:
             self._set_repeat_for_selection(False)
         elif key.startswith("symmetry:"):
             self.symmetry_mode = key.split(":", 1)[1]
+            self.active_lens_preset = None
+            self.lens_transition = None
         elif key.startswith("toggle:"):
             self._toggle_effect(key.split(":", 1)[1])
         elif key == "guides":
@@ -561,6 +612,8 @@ class ModernApp:
             self._action_delete_selected_shape()
 
     def _toggle_effect(self, key):
+        self.active_lens_preset = None
+        self.lens_transition = None
         if key == "global_rotation":
             self.enable_global_rotation = not self.enable_global_rotation
         elif key == "object_rotation":
@@ -569,6 +622,65 @@ class ModernApp:
             self.enable_pulsing = not self.enable_pulsing
         elif key == "trails":
             self.enable_trails = not self.enable_trails
+
+    def _start_lens_transition(self, preset_key):
+        preset = self.lens_presets[preset_key]
+        self.active_lens_preset = preset_key
+        self.symmetry_mode = preset["symmetry_mode"]
+        self.enable_global_rotation = preset["global_rotation"]
+        self.enable_object_rotation = preset["object_rotation"]
+        self.enable_pulsing = preset["pulsing"]
+        self.enable_trails = preset["trails"]
+        if not self.enable_trails:
+            self.trail_frames.clear()
+        self.lens_transition = {
+            "elapsed": 0.0,
+            "duration": 0.55,
+            "start_slices": float(self.num_slices),
+            "target_slices": float(preset["slices"]),
+            "start_global_angle": float(self.global_rotation_angle),
+            "target_global_angle": float(preset["global_angle"]),
+            "start_object_angle": float(self.object_rotation_angle),
+            "target_object_angle": float(preset["object_angle"]),
+        }
+
+    def _update_lens_transition(self, time_delta_seconds):
+        if not self.lens_transition:
+            return
+        self.lens_transition["elapsed"] += time_delta_seconds
+        duration = self.lens_transition["duration"]
+        t = min(1.0, self.lens_transition["elapsed"] / duration)
+        eased = 1 - (1 - t) * (1 - t) * (1 - t)
+
+        start_slices = self.lens_transition["start_slices"]
+        target_slices = self.lens_transition["target_slices"]
+        interpolated_slices = start_slices + (target_slices - start_slices) * eased
+        rounded_slices = int(round(interpolated_slices))
+        if rounded_slices % 2 == 1:
+            rounded_slices += 1 if target_slices >= start_slices else -1
+        self.num_slices = max(4, min(16, rounded_slices))
+
+        self.global_rotation_angle = self._lerp_angle(
+            self.lens_transition["start_global_angle"],
+            self.lens_transition["target_global_angle"],
+            eased,
+        )
+        self.object_rotation_angle = self._lerp_angle(
+            self.lens_transition["start_object_angle"],
+            self.lens_transition["target_object_angle"],
+            eased,
+        )
+
+        if t >= 1.0:
+            preset = self.lens_presets[self.active_lens_preset]
+            self.num_slices = preset["slices"]
+            self.global_rotation_angle = preset["global_angle"] % 360
+            self.object_rotation_angle = preset["object_angle"] % 360
+            self.lens_transition = None
+
+    def _lerp_angle(self, start, target, t):
+        delta = (target - start + 180) % 360 - 180
+        return (start + delta * t) % 360
 
     def _set_repeat_for_selection(self, enabled):
         if not self.selected_shapes:
@@ -594,6 +706,8 @@ class ModernApp:
             value = value if value % 2 == 0 else value - 1
             self.num_slices = max(4, value)
             slider.value = self.num_slices
+            self.active_lens_preset = None
+            self.lens_transition = None
         elif key == "shape_size" and self.selected_shapes:
             if commit:
                 self._commit_current_shape_transform(["pos", "size"])
@@ -805,6 +919,7 @@ class ModernApp:
             self.global_rotation_angle = (self.global_rotation_angle - 0.5) % 360
         if self.enable_object_rotation:
             self.object_rotation_angle = (self.object_rotation_angle + 1.0) % 360
+        self._update_lens_transition(time_delta_seconds)
         self.pulsing_scale = (
             1.0 + 0.05 * math.sin(pygame.time.get_ticks() * 0.002)
             if self.enable_pulsing
@@ -923,8 +1038,17 @@ class ModernApp:
                 self._draw_text(help_text, (x, 215), self.font_sm, self.colors["muted"])
         elif self.active_tool in {"shape", "star"}:
             self._draw_section_label("Shape Library", 137)
-            self._draw_text("Pick a shape, then drag on canvas.", (x, 166), self.font_xs, self.colors["muted"])
-            for key in ["shape_lib:triangle", "shape_lib:star", "shape_lib:square", "shape_lib:diamond", "shape_lib:hexagon", "shape_lib:heart"]:
+            for key in [
+                "shape_lib:triangle",
+                "shape_lib:star",
+                "shape_lib:circle",
+                "shape_lib:square",
+                "shape_lib:diamond",
+                "shape_lib:hexagon",
+                "shape_lib:arrow",
+                "shape_lib:cross",
+                "shape_lib:heart",
+            ]:
                 self._draw_button(self.buttons[key], active=self.selected_shape_key == key.split(":", 1)[1])
             self._draw_button(self.buttons["shape_repeat"], active=self.next_shape_repeat_enabled)
             self._draw_button(self.buttons["shape_free"], active=not self.next_shape_repeat_enabled)
@@ -934,7 +1058,9 @@ class ModernApp:
             self._draw_section_label("Shape", 197)
             self._draw_text("Select a shape to edit it.", (x, 226), self.font_sm, self.colors["muted"])
 
-        self._draw_section_label("Symmetry", 354)
+        self._draw_section_label("Lens", 354)
+        for key in ["lens:calm", "lens:bloom", "lens:prism"]:
+            self._draw_button(self.buttons[key], active=self.active_lens_preset == key.split(":", 1)[1])
         for key in ["symmetry:Kaleidoscope", "symmetry:Rotate"]:
             self._draw_button(self.buttons[key], active=self.symmetry_mode == key.split(":", 1)[1])
         self._draw_slider(self.sliders["slices"])
@@ -1272,12 +1398,18 @@ class ModernApp:
             return Triangle(pos, size, fill_color, **kwargs)
         if shape_key == "star":
             return Star(pos, size, fill_color, **kwargs)
+        if shape_key == "circle":
+            return PolygonShape(pos, size, fill_color, sides=32, **kwargs)
         if shape_key == "square":
             return PolygonShape(pos, size, fill_color, sides=4, **kwargs)
         if shape_key == "diamond":
             return Diamond(pos, size, fill_color, **kwargs)
         if shape_key == "hexagon":
             return PolygonShape(pos, size, fill_color, sides=6, **kwargs)
+        if shape_key == "arrow":
+            return Arrow(pos, size, fill_color, **kwargs)
+        if shape_key == "cross":
+            return Cross(pos, size, fill_color, **kwargs)
         if shape_key == "heart":
             return Heart(pos, size, fill_color, **kwargs)
         return Triangle(pos, size, fill_color, **kwargs)

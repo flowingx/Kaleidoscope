@@ -27,13 +27,14 @@ An interactive kaleidoscope drawing application built with Python and Pygame. Th
 
 - **Vector Shape Tools**:
 
-  - **Shape Library**: Directly draw vector shapes such as `Triangle`, `Star`, `Square`, `Diamond`, `Hexagon`, and `Heart`.
+  - **Shape Library**: Directly draw vector shapes such as `Triangle`, `Star`, `Circle`, `Square`, `Diamond`, `Hexagon`, `Arrow`, `Cross`, and `Heart`.
   - **Point & Lasso Selection**: The selection tool offers `Point` and `Lasso` modes. Edit one shape precisely, or lasso multiple shapes to move, scale, and delete them together.
   - **Repeat / Free**: Each shape can participate in the kaleidoscope mapping or stay as a one-off free object. `Free` shapes work like stickers or note annotations.
   - **Properties Panel**: Adjust size, rotation, and repeat mode for selected shapes.
 
 - **Powerful Symmetry Engine**:
 
+  - **Lens Presets**: Switch between `Calm`, `Bloom`, and `Prism` viewing angles. Each preset changes slice count, symmetry mode, canvas angle, and motion effects with a short transition.
   - **Slice Count**: Freely adjust the number of symmetry axes with a real-time preview.
   - **Symmetry Modes**: Offers two core modes: `Kaleidoscope` (rotation + mirror) and standard `Rotate` only.
   - **Guide Lines**: Optional guide lines follow the current slice count and automatically use a high-contrast complementary color based on the canvas background.

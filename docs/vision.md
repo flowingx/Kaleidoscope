@@ -26,9 +26,12 @@ The first shape library includes:
 
 - triangle
 - star
+- circle
 - square
 - diamond
 - hexagon
+- arrow
+- cross
 - heart
 
 Future additions can include arrows, labels, frames, callouts, icons, and image-like stamps.
@@ -39,11 +42,17 @@ The strongest version of the app is not just "draw repeated marks." It is:
 
 > Place marks on a board, then change the viewing lens and watch the artwork reorganize.
 
+The first prototype of this idea is now available as Lens presets:
+
+- **Calm**: fewer slices, rotate-only view, no motion.
+- **Bloom**: mirrored kaleidoscope view with a soft pulse.
+- **Prism**: dense mirrored view with rotation, object motion, pulse, and trails.
+
+These presets do not change the artwork itself. They change the way the board is viewed, which is the direction behind the "change the viewing angle and everything transforms" idea.
+
 Possible next steps:
 
-- Add a **Lens** panel for changing slice count, mirror mode, center point, and rotation as named presets.
 - Let users save several view presets and switch between them.
-- Add an animated transition between view presets.
 - Keep free objects pinned to the board while repeated objects pass through the kaleidoscope lens.
 - Eventually support a draggable lens center, so the same drawing changes when the viewer's angle changes.
 
