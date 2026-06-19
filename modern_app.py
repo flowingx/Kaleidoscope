@@ -458,7 +458,7 @@ class ModernApp:
             self._update_lasso(event.pos)
         elif self.is_creating_shape:
             self._update_shape_creation(event.pos)
-        elif self.selected_shapes and self.shape_drag_offset and event.buttons[0]:
+        elif self.selected_shapes and self.shape_drag_offset is not None and event.buttons[0]:
             self._drag_selected_shapes(event.pos)
 
     def _handle_mouse_up(self, pos):
@@ -475,7 +475,7 @@ class ModernApp:
             self._finish_lasso()
         elif self.is_creating_shape:
             self._finish_shape_creation()
-        elif self.shape_drag_offset:
+        elif self.shape_drag_offset is not None:
             self._finish_shape_drag()
 
     def _handle_export_dialog_event(self, event):
@@ -1454,7 +1454,7 @@ class ModernApp:
                     return
 
     def _drag_selected_shapes(self, pos):
-        if not self.selected_shapes or not self.shape_drag_offset:
+        if not self.selected_shapes or self.shape_drag_offset is None:
             return
         target = pygame.Vector2(pos) - self.shape_drag_offset
         first_shape = self.selected_shapes[0]
